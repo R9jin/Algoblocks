@@ -2,6 +2,7 @@ import "blockly/blocks";
 import * as Blockly from "blockly/core";
 import { javascriptGenerator } from "blockly/javascript";
 import * as En from "blockly/msg/en";
+import { pythonGenerator } from "blockly/python";
 import { useEffect, useRef } from "react";
 
 Blockly.setLocale(En);
@@ -11,7 +12,8 @@ export default function BlocklyWorkspace({ onChange }) {
   const workspace = useRef(null);
 
   useEffect(() => {
-    if (!workspace.current) {
+    // Only inject once
+    if (!workspace.current && blocklyDiv.current) {
       const toolbox = {
         kind: "categoryToolbox",
         contents: [
@@ -23,8 +25,6 @@ export default function BlocklyWorkspace({ onChange }) {
               { kind: "block", type: "controls_if" },
               { kind: "block", type: "logic_compare" },
               { kind: "block", type: "logic_operation" },
-              { kind: "block", type: "logic_negate" },
-              { kind: "block", type: "logic_boolean" },
             ],
           },
           {
@@ -32,35 +32,8 @@ export default function BlocklyWorkspace({ onChange }) {
             name: "Loops",
             colour: "120",
             contents: [
-              { kind: "block", type: "controls_repeat_ext" },
-              { kind: "block", type: "controls_whileUntil" },
               { kind: "block", type: "controls_for" },
-              { kind: "block", type: "controls_forEach" },
-              { kind: "block", type: "controls_flow_statements" },
-            ],
-          },
-          {
-            kind: "category",
-            name: "Math",
-            colour: "230",
-            contents: [
-              { kind: "block", type: "math_number" },
-              { kind: "block", type: "math_arithmetic" },
-              { kind: "block", type: "math_single" },
-              { kind: "block", type: "math_trig" },
-              { kind: "block", type: "math_constant" },
-            ],
-          },
-          {
-            kind: "category",
-            name: "Text",
-            colour: "160",
-            contents: [
-              { kind: "block", type: "text" },
-              { kind: "block", type: "text_join" },
-              { kind: "block", type: "text_append" },
-              { kind: "block", type: "text_length" },
-              { kind: "block", type: "text_isEmpty" },
+              { kind: "block", type: "controls_whileUntil" },
             ],
           },
           {
@@ -69,44 +42,49 @@ export default function BlocklyWorkspace({ onChange }) {
             colour: "260",
             contents: [
               { kind: "block", type: "lists_create_with" },
-              { kind: "block", type: "lists_repeat" },
               { kind: "block", type: "lists_length" },
-              { kind: "block", type: "lists_isEmpty" },
-              { kind: "block", type: "lists_indexOf" },
             ],
           },
-          {
-            kind: "sep" // Visual separator
-          },
-          {
-            kind: "category",
-            name: "Variables",
-            colour: "330",
-            custom: "VARIABLE",
-          },
-          {
-            kind: "category",
-            name: "Functions",
-            colour: "290",
-            custom: "PROCEDURE",
-          },
+          { kind: "category", name: "Variables", colour: "330", custom: "VARIABLE" },
+          { kind: "category", name: "Functions", colour: "290", custom: "PROCEDURE" },
         ],
       };
 
+      // Inject workspace after div is ready
       workspace.current = Blockly.inject(blocklyDiv.current, {
-        toolbox: toolbox,
+        toolbox,
         trashcan: true,
-        grid: { spacing: 20, length: 3, colour: "#ccc", snap: true },
-        zoom: { controls: true, wheel: true, startScale: 1.0, maxScale: 3, minScale: 0.3, scaleSpeed: 1.2 },
+        zoom: { controls: true, wheel: true },
+        collapse: true,
       });
 
+      // Add listener after injection
       workspace.current.addChangeListener(() => {
         const json = Blockly.serialization.workspaces.save(workspace.current);
         const jsCode = javascriptGenerator.workspaceToCode(workspace.current);
-        onChange(json, jsCode);
+        const pyCode = pythonGenerator.workspaceToCode(workspace.current);
+        onChange(json, jsCode, pyCode);
       });
     }
+
+    // Cleanup
+    return () => {
+      if (workspace.current) {
+        workspace.current.dispose();
+        workspace.current = null;
+      }
+    };
   }, [onChange]);
 
-  return <div ref={blocklyDiv} style={{ height: "600px", width: "100%", border: "1px solid #ccc" }} />;
+  return (
+    <div
+      ref={blocklyDiv}
+      style={{
+        height: "600px",
+        width: "100%",
+        border: "1px solid #ccc",
+        overflow: "hidden",
+      }}
+    />
+  );
 }
