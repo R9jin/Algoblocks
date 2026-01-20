@@ -1,39 +1,46 @@
 import { useState } from "react";
 import BlocklyWorkspace from "./components/BlocklyWorkspace.jsx";
-import CodeRunner from "./components/CodeRunner.jsx";
 import ComplexityPanel from "./components/ComplexityPanel.jsx";
 import { buildAST } from "./logic/astBuilder.js";
 import { analyzeLineByLine } from "./logic/complexityEngine.js";
 
 export default function App() {
   const [lineComplexity, setLineComplexity] = useState([]);
-  const [generatedCode, setGeneratedCode] = useState("");
-  const [language, setLanguage] = useState("javascript");
+  const [code, setCode] = useState("");
 
-  const handleBlocklyChange = (workspaceJson, code) => {
-    const ast = buildAST(workspaceJson);
+  const handleBlocklyChange = (json, jsCode) => {
+    setCode(jsCode);
+    const ast = buildAST(json);
     const complexity = analyzeLineByLine(ast);
     setLineComplexity(complexity);
-    setGeneratedCode(code);
   };
 
   return (
-    <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
-      <header style={{ textAlign: "center", marginBottom: "30px" }}>
-        <h2>AlgoBlocks: An Interactive System for Learning Algorithms Using Line-by-Line Complexity Feedback</h2>
+    <div style={{ padding: "10px", backgroundColor: "#f0f2f5", minHeight: "100vh" }}>
+      <header style={{ textAlign: "center", padding: "20px", background: "white", borderRadius: "8px", marginBottom: "20px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
+        <h2 style={{ margin: 0, color: "#1a73e8" }}>AlgoBlocks</h2>
+        <p style={{ margin: "5px 0 0", color: "#5f6368", fontSize: "14px" }}>
+          Interactive Algorithm Learning System
+        </p>
       </header>
 
-      <div style={{ marginBottom: "20px", textAlign: "center" }}>
-        <select value={language} onChange={(e) => setLanguage(e.target.value)}>
-          <option value="javascript">JavaScript</option>
-          <option value="python">Python</option>
-        </select>
-      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 400px", gap: "20px", maxWidth: "1600px", margin: "0 auto" }}>
+        {/* Left Side: Workspace and Code Preview */}
+        <div>
+          <div style={{ backgroundColor: "white", borderRadius: "8px", overflow: "hidden", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
+            <BlocklyWorkspace onChange={handleBlocklyChange} />
+          </div>
+          <div style={{ marginTop: "20px", padding: "15px", background: "#202124", color: "#e8eaed", borderRadius: "8px", minHeight: "150px" }}>
+            <h4 style={{ margin: "0 0 10px", color: "#8ab4f8" }}>Generated JavaScript</h4>
+            <pre style={{ margin: 0, fontSize: "13px", fontFamily: "monospace" }}>{code || "// Add blocks to generate code"}</pre>
+          </div>
+        </div>
 
-      <div style={{ display: "flex", justifyContent: "center", gap: "40px" }}>
-        <BlocklyWorkspace language={language} onChange={handleBlocklyChange} />
-        <CodeRunner code={generatedCode} language={language} />
-        <ComplexityPanel lineComplexity={lineComplexity} />
+        {/* Right Side: Complexity Feedback */}
+        <div style={{ backgroundColor: "white", padding: "15px", borderRadius: "8px", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
+          <h3 style={{ borderBottom: "2px solid #eee", paddingBottom: "10px" }}>Complexity Feedback</h3>
+          <ComplexityPanel lineComplexity={lineComplexity} />
+        </div>
       </div>
     </div>
   );
