@@ -8,7 +8,7 @@ import { analyzeLineByLine } from "./logic/complexityEngine.js";
 export default function App() {
   const [lineComplexity, setLineComplexity] = useState([]);
   const [generatedCode, setGeneratedCode] = useState("");
-  const [language, setLanguage] = useState("javascript"); // <--- ADD THIS
+  const [language, setLanguage] = useState("javascript");
 
   const handleBlocklyChange = (workspaceJson, code) => {
     const ast = buildAST(workspaceJson);
@@ -20,11 +20,9 @@ export default function App() {
   return (
     <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
       <header style={{ textAlign: "center", marginBottom: "30px" }}>
-        <h2>AlgoBlocks: Interactive System for Learning Algorithms</h2>
-        <p>Line-by-Line Complexity & Code Execution Prototype</p>
+        <h2>AlgoBlocks: An Interactive System for Learning Algorithms Using Line-by-Line Complexity Feedback</h2>
       </header>
 
-      {/* optional: let user select language */}
       <div style={{ marginBottom: "20px", textAlign: "center" }}>
         <select value={language} onChange={(e) => setLanguage(e.target.value)}>
           <option value="javascript">JavaScript</option>

@@ -1,7 +1,8 @@
-// BlocklyWorkspace.jsx
-import * as Blockly from "blockly/core"; // ← use named import
-import "blockly/javascript";
-import "blockly/python";
+// src/Algoblocks/components/BlocklyWorkspace.jsx
+import "blockly/blocks"; // all standard blocks
+import * as Blockly from "blockly/core"; // core Blockly
+import { javascriptGenerator } from "blockly/javascript";
+import { pythonGenerator } from "blockly/python";
 import { useEffect, useRef } from "react";
 
 export default function BlocklyWorkspace({ language, onChange }) {
@@ -9,7 +10,10 @@ export default function BlocklyWorkspace({ language, onChange }) {
   const workspace = useRef(null);
 
   useEffect(() => {
-    if (!workspace.current) {
+    let initialized = false;
+
+    if (!workspace.current && blocklyDiv.current) {
+      // Define toolbox
       const toolbox = {
         kind: "categoryToolbox",
         contents: [
@@ -100,34 +104,44 @@ export default function BlocklyWorkspace({ language, onChange }) {
         ]
       };
 
+      // Inject Blockly
       workspace.current = Blockly.inject(blocklyDiv.current, {
         toolbox,
         trashcan: true,
         zoom: { controls: true, wheel: true }
       });
+      initialized = true;
 
+      // Workspace change listener
       workspace.current.addChangeListener(() => {
         const json = Blockly.serialization.workspaces.save(workspace.current);
-
         let code = "";
         if (language === "javascript") {
-            code = Blockly.JavaScript.workspaceToCode(workspace.current);
+          code = javascriptGenerator.workspaceToCode(workspace.current);
         } else if (language === "python") {
-            code = Blockly.Python.workspaceToCode(workspace.current);
+          code = pythonGenerator.workspaceToCode(workspace.current);
         } else {
-            code = "// Language not supported yet";
+          code = "// Language not supported yet";
         }
-
         onChange(json, code);
       });
     }
 
+    // Cleanup on unmount
     return () => {
-      if (workspace.current) workspace.current.dispose();
+      if (initialized && workspace.current) {
+        setTimeout(() => {
+          workspace.current.dispose();
+          workspace.current = null;
+        }, 0);
+      }
     };
   }, [language, onChange]);
 
   return (
-    <div ref={blocklyDiv} style={{ height: "600px", width: "800px", border: "1px solid #ccc" }} />
+    <div
+      ref={blocklyDiv}
+      style={{ height: "600px", width: "800px", border: "1px solid #ccc" }}
+    />
   );
 }
