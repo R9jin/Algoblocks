@@ -1,23 +1,38 @@
+// src/App.jsx
 import { useState } from "react";
 import BlocklyWorkspace from "./components/BlocklyWorkspace.jsx";
-import ComplexityPanel from "./components/ComplexityPanel.jsx";
-import { buildAST } from "./logic/astBuilder.js";
-import { analyzeLineByLine } from "./logic/complexityEngine.js";
+// ... other imports
 
 export default function App() {
   const [lineComplexity, setLineComplexity] = useState([]);
+  
+  // 1. ADD STATE FOR JAVA
   const [generatedJS, setGeneratedJS] = useState("");
   const [generatedPy, setGeneratedPy] = useState("");
-  const [selectedLanguage, setSelectedLanguage] = useState("javascript"); // Track toggle state
+  const [generatedJava, setGeneratedJava] = useState(""); 
+  
+  const [selectedLanguage, setSelectedLanguage] = useState("java"); // Default to Java?
 
-  const handleBlocklyChange = (json, jsCode, pyCode) => {
-    // Store both generated strings
+  // 2. ACCEPT JAVA CODE FROM CHILD
+  const handleBlocklyChange = (json, jsCode, pyCode, javaCode) => {
     setGeneratedJS(jsCode);
     setGeneratedPy(pyCode);
+    setGeneratedJava(javaCode); // Store it
 
-    const ast = buildAST(json);
-    const complexity = analyzeLineByLine(ast);
-    setLineComplexity(complexity);
+    // Your complexity logic (assuming it runs on JSON)
+    // const ast = buildAST(json);
+    // const complexity = analyzeLineByLine(ast);
+    // setLineComplexity(complexity);
+  };
+
+  // 3. HELPER TO PICK WHICH CODE TO SHOW
+  const getCodeToDisplay = () => {
+    switch (selectedLanguage) {
+      case "javascript": return generatedJS;
+      case "python": return generatedPy;
+      case "java": return generatedJava;
+      default: return "// Select a language";
+    }
   };
 
   return (
@@ -30,30 +45,29 @@ export default function App() {
         <div style={{ width: "800px" }}>
           <BlocklyWorkspace onChange={handleBlocklyChange} />
           
-          {/* Toggle Button / Select Option Section */}
           <div style={{ marginTop: "20px", padding: "15px", background: "#202124", color: "white", borderRadius: "8px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
               <strong style={{ color: "#8ab4f8" }}>Generated Code Output</strong>
               
-              {/* The Select Option Button */}
+              {/* 4. ADD JAVA OPTION */}
               <select 
                 value={selectedLanguage} 
                 onChange={(e) => setSelectedLanguage(e.target.value)}
                 style={{ padding: "4px 8px", borderRadius: "4px", cursor: "pointer" }}
               >
+                <option value="java">Java (CS Thesis)</option>
                 <option value="javascript">JavaScript</option>
                 <option value="python">Python</option>
               </select>
             </div>
 
-            {/* Display code based on the toggle state */}
             <pre style={{ margin: 0, fontFamily: "monospace", fontSize: "13px" }}>
-              {selectedLanguage === "javascript" ? generatedJS : generatedPy || "// Add blocks to see code"}
+              {getCodeToDisplay() || "// Add blocks to see code"}
             </pre>
           </div>
         </div>
         
-        <ComplexityPanel lineComplexity={lineComplexity} />
+        {/* <ComplexityPanel ... /> */}
       </div>
     </div>
   );

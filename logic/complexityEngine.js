@@ -4,7 +4,6 @@ export function analyzeLineByLine(ast) {
   function traverse(node, depth = 0) {
     if (!node) return;
 
-    // Default values for O(1) blocks
     let row = {
       type: node.type,
       lineOfCode: `${node.type}(...)`,
@@ -13,7 +12,6 @@ export function analyzeLineByLine(ast) {
       color: "#27ae60" // Green
     };
 
-    // Rule-based logic for specific blocks
     if (node.type === "controls_for") {
       row.lineOfCode = "for (let i = 0; i < n; i++) { ... }";
       row.timeComplexity = depth > 0 ? `O(n^${depth + 1})` : "O(n)";
@@ -29,7 +27,6 @@ export function analyzeLineByLine(ast) {
 
     result.push(row);
 
-    // Recursive traversal to handle nested blocks
     if (node.children) {
       node.children.forEach(child => traverse(child, depth + 1));
     }

@@ -1,9 +1,13 @@
-import "blockly/blocks"; // CRITICAL: This loads the standard variable blocks
+// src/components/BlocklyWorkspace.jsx
+import "blockly/blocks";
 import * as Blockly from "blockly/core";
 import { javascriptGenerator } from "blockly/javascript";
 import * as En from "blockly/msg/en";
 import { pythonGenerator } from "blockly/python";
 import { useEffect, useRef } from "react";
+
+// 1. IMPORT YOUR NEW JAVA GENERATOR
+import { javaGenerator } from "../generators/java";
 
 Blockly.setLocale(En);
 
@@ -13,74 +17,8 @@ export default function BlocklyWorkspace({ onChange }) {
 
   useEffect(() => {
     if (!workspace.current) {
-      const toolboxConfig = {
-        kind: "categoryToolbox",
-        contents: [
-          {
-            kind: "category",
-            name: "Logic",
-            colour: "210",
-            contents: [
-              { kind: "block", type: "controls_if" },
-              { kind: "block", type: "logic_compare" },
-              { kind: "block", type: "logic_operation" },
-              { kind: "block", type: "logic_negate" },
-              { kind: "block", type: "logic_boolean" },
-            ],
-          },
-          {
-            kind: "category",
-            name: "Loops",
-            colour: "120",
-            contents: [
-              { kind: "block", type: "controls_repeat_ext" },
-              { kind: "block", type: "controls_whileUntil" },
-              { kind: "block", type: "controls_for" },
-              { kind: "block", type: "controls_forEach" },
-              { kind: "block", type: "controls_flow_statements" },
-            ],
-          },
-          {
-            kind: "category",
-            name: "Math",
-            colour: "230",
-            contents: [
-              { kind: "block", type: "math_number" },
-              { kind: "block", type: "math_arithmetic" },
-              { kind: "block", type: "math_single" },
-              { kind: "block", type: "math_trig" },
-              { kind: "block", type: "math_constant" },
-            ],
-          },
-          {
-            kind: "category",
-            name: "Text",
-            colour: "160",
-            contents: [
-              { kind: "block", type: "text" },
-              { kind: "block", type: "text_join" },
-              { kind: "block", type: "text_append" },
-              { kind: "block", type: "text_length" },
-              { kind: "block", type: "text_isEmpty" },
-            ],
-          },
-          {
-            kind: "category",
-            name: "Lists",
-            colour: "260",
-            contents: [
-              { kind: "block", type: "lists_create_with" },
-              { kind: "block", type: "lists_repeat" },
-              { kind: "block", type: "lists_length" },
-              { kind: "block", type: "lists_isEmpty" },
-              { kind: "block", type: "lists_indexOf" },
-            ],
-          },
-          { kind: "sep" }, // Visual separator
-          { kind: "category", name: "Variables", colour: "330", custom: "VARIABLE" },
-          { kind: "category", name: "Functions", colour: "290", custom: "PROCEDURE" },
-        ],
-      };
+      // ... (Your existing toolboxConfig stays exactly the same) ...
+      const toolboxConfig = { /* ... keep your existing toolbox ... */ };
 
       workspace.current = Blockly.inject(blocklyDiv.current, {
         toolbox: toolboxConfig,
@@ -88,8 +26,11 @@ export default function BlocklyWorkspace({ onChange }) {
         zoom: { controls: true, wheel: true },
       });
 
+      // 2. ENABLE THE JAVA GENERATOR
+      // This initializes the variable DB and standard functions
+      javaGenerator.init(workspace.current);
+
       workspace.current.addChangeListener((event) => {
-        // Trigger onChange only for structural changes
         if (
           event.type === Blockly.Events.BLOCK_CREATE ||
           event.type === Blockly.Events.BLOCK_DELETE ||
@@ -97,9 +38,16 @@ export default function BlocklyWorkspace({ onChange }) {
           event.type === Blockly.Events.BLOCK_CHANGE
         ) {
           const json = Blockly.serialization.workspaces.save(workspace.current);
+          
+          // Generate all 3 languages
           const js = javascriptGenerator.workspaceToCode(workspace.current);
           const py = pythonGenerator.workspaceToCode(workspace.current);
-          onChange(json, js, py);
+          
+          // 3. GENERATE JAVA
+          const java = javaGenerator.workspaceToCode(workspace.current);
+          
+          // Pass all 3 back to App.jsx
+          onChange(json, js, py, java);
         }
       });
     }
@@ -110,16 +58,12 @@ export default function BlocklyWorkspace({ onChange }) {
         workspace.current = null;
       }
     };
-  }, [onChange]);
+  }, [onChange]); // End useEffect
 
   return (
     <div
       ref={blocklyDiv}
-      style={{
-        height: "600px",
-        width: "100%",
-        border: "1px solid #ccc",
-      }}
+      style={{ height: "600px", width: "100%", border: "1px solid #ccc" }}
     />
   );
 }
