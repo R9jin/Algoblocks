@@ -4,13 +4,13 @@ import { javascriptGenerator } from "blockly/javascript";
 import * as En from "blockly/msg/en";
 import { pythonGenerator } from "blockly/python";
 import { useEffect, useRef } from "react";
-import { javaGenerator } from "../generators/java"; // Your custom generator
+import { javaGenerator } from "../generators/java";
 
 Blockly.setLocale(En);
 
 // ==============================================================================
-// 1. JAVA TOOLBOX (Restricted)
-// Only shows blocks that your 'generators/java.js' file actually supports.
+// 1. JAVA TOOLBOX (Upgraded for Searching & Sorting)
+// Now includes Arrays (Lists), For-Loops, and Functions
 // ==============================================================================
 const javaToolbox = {
   kind: "categoryToolbox",
@@ -22,7 +22,6 @@ const javaToolbox = {
       contents: [
         { kind: "block", type: "controls_if" },
         { kind: "block", type: "logic_compare" },
-        { kind: "block", type: "logic_operation" },
         { kind: "block", type: "logic_boolean" },
       ],
     },
@@ -37,6 +36,7 @@ const javaToolbox = {
           inputs: { TIMES: { shadow: { type: "math_number", fields: { NUM: 10 } } } } 
         },
         { kind: "block", type: "controls_whileUntil" },
+        { kind: "block", type: "controls_for" }, // REQUIRED for Sorting (i=0 to n)
       ],
     },
     {
@@ -57,16 +57,27 @@ const javaToolbox = {
         { kind: "block", type: "text_print" },
       ],
     },
+    {
+      kind: "category",
+      name: "Lists",
+      colour: "260",
+      contents: [
+        { kind: "block", type: "lists_create_with" }, // int[] arr = {1,2}
+        { kind: "block", type: "lists_getIndex" },    // arr[i]
+        { kind: "block", type: "lists_setIndex" },    // arr[i] = x
+        { kind: "block", type: "lists_length" },      // arr.length
+      ],
+    },
     { kind: "sep" },
     { kind: "category", name: "Variables", colour: "330", custom: "VARIABLE" },
+    { kind: "category", name: "Functions", colour: "290", custom: "PROCEDURE" }, // REQUIRED for Recursion
   ],
 };
 
 // ==============================================================================
-// 2. FULL TOOLBOX (JS / Python)
-// The complete list you pasted, including Lists, Functions, and Advanced Math.
+// 2. GENERAL TOOLBOX (Full)
 // ==============================================================================
-const fullToolbox = {
+const generalToolbox = {
   kind: "categoryToolbox",
   contents: [
     {
@@ -106,11 +117,8 @@ const fullToolbox = {
         { kind: "block", type: "math_trig" },
         { kind: "block", type: "math_constant" },
         { kind: "block", type: "math_round" },
-        { kind: "block", type: "math_on_list" },
         { kind: "block", type: "math_modulo" },
-        { kind: "block", type: "math_constrain" },
         { kind: "block", type: "math_random_int" },
-        { kind: "block", type: "math_random_float" },
       ],
     },
     {
@@ -120,14 +128,7 @@ const fullToolbox = {
       contents: [
         { kind: "block", type: "text" },
         { kind: "block", type: "text_join" },
-        { kind: "block", type: "text_append" },
         { kind: "block", type: "text_length" },
-        { kind: "block", type: "text_isEmpty" },
-        { kind: "block", type: "text_indexOf" },
-        { kind: "block", type: "text_charAt" },
-        { kind: "block", type: "text_getSubstring" },
-        { kind: "block", type: "text_changeCase" },
-        { kind: "block", type: "text_trim" },
         { kind: "block", type: "text_print" },
         { kind: "block", type: "text_prompt_ext" },
       ],
@@ -137,7 +138,6 @@ const fullToolbox = {
       name: "Lists",
       colour: "260",
       contents: [
-        { kind: "block", type: "lists_create_empty" },
         { kind: "block", type: "lists_create_with" },
         { kind: "block", type: "lists_repeat" },
         { kind: "block", type: "lists_length" },
@@ -145,8 +145,6 @@ const fullToolbox = {
         { kind: "block", type: "lists_indexOf" },
         { kind: "block", type: "lists_getIndex" },
         { kind: "block", type: "lists_setIndex" },
-        { kind: "block", type: "lists_getSublist" },
-        { kind: "block", type: "lists_split" },
         { kind: "block", type: "lists_sort" },
       ],
     },
@@ -157,26 +155,25 @@ const fullToolbox = {
 };
 
 // ==============================================================================
-// 3. THE REACT COMPONENT
+// 3. MAIN COMPONENT
 // ==============================================================================
 export default function BlocklyWorkspace({ onChange, language }) {
   const blocklyDiv = useRef(null);
   const workspace = useRef(null);
 
   useEffect(() => {
-    // Only inject once
+    // 1. Initialize Workspace
     if (!workspace.current && blocklyDiv.current) {
       
-      // Determine which toolbox to start with
-      const initialToolbox = (language === "java") ? javaToolbox : fullToolbox;
+      const initialToolbox = (language === "java") ? javaToolbox : generalToolbox;
 
       workspace.current = Blockly.inject(blocklyDiv.current, {
-        toolbox: initialToolbox,
+        toolbox: initialToolbox, 
         trashcan: true,
         zoom: { controls: true, wheel: true },
       });
 
-      // Change Listener (Generates Code)
+      // 2. Add Change Listener
       workspace.current.addChangeListener((event) => {
         if (
           event.type === Blockly.Events.BLOCK_CREATE ||
@@ -188,13 +185,11 @@ export default function BlocklyWorkspace({ onChange, language }) {
         ) {
           const json = Blockly.serialization.workspaces.save(workspace.current);
           
-          // Java Safety Check
-          let javaCode = "// Not supported";
+          let javaCode = "// Java not supported";
           try {
              javaCode = javaGenerator.workspaceToCode(workspace.current);
           } catch(e) { console.warn("Java Gen Error", e); }
 
-          // Standard Generators
           const js = javascriptGenerator.workspaceToCode(workspace.current);
           const py = pythonGenerator.workspaceToCode(workspace.current);
           
@@ -202,25 +197,18 @@ export default function BlocklyWorkspace({ onChange, language }) {
         }
       });
     }
+  }, [onChange]); 
 
-    return () => {
-      // Cleanup handled by React unmount usually
-    };
-  }, [onChange]); // Run only on mount (mostly)
-
-  // ============================================================================
-  // 4. DYNAMIC TOOLBOX SWITCHING
-  // This hook runs whenever the 'language' prop changes (e.g. User selects "Python")
-  // ============================================================================
+  // 3. HANDLE LANGUAGE SWITCHING
   useEffect(() => {
     if (workspace.current) {
       if (language === "java") {
         workspace.current.updateToolbox(javaToolbox);
       } else {
-        workspace.current.updateToolbox(fullToolbox);
+        workspace.current.updateToolbox(generalToolbox);
       }
     }
-  }, [language]);
+  }, [language]); 
 
   return (
     <div
