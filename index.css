@@ -48,9 +48,11 @@ body {
   overflow: hidden;
 }
 
+/* --- DELETE the 'flex' lines marked below --- */
+
 /* LEFT COLUMN */
 .left-column {
-  flex: 2; /* 66% Width */
+  /* flex: 2;  <-- DELETE THIS */
   display: flex;
   flex-direction: column;
   border-right: 4px solid #ddd;
@@ -58,24 +60,23 @@ body {
 
 /* RIGHT COLUMN */
 .right-column {
-  flex: 1; /* 33% Width */
+  /* flex: 1;  <-- DELETE THIS */
   display: flex;
   flex-direction: column;
   background-color: #fff;
 }
 
-/* --- PANELS --- */
-
 /* 1. Workspace (Top Left) */
 .workspace-area {
-  flex: 2; /* 66% Height of Left Column */
+  /* flex: 2;  <-- DELETE THIS */
   position: relative;
-  min-height: 0; /* Important for flexbox scrolling */
+  min-height: 0; 
+  overflow: hidden; /* Keep this to prevent scrollbar bugs */
 }
 
 /* 2. Generated Code (Bottom Left) */
 .code-area {
-  flex: 1; /* 33% Height of Left Column */
+  /* flex: 1;  <-- DELETE THIS */
   background-color: #282c34;
   color: #abb2bf;
   border-top: 4px solid #ddd;
@@ -86,14 +87,14 @@ body {
 
 /* 3. Complexity (Top Right) */
 .complexity-area {
-  flex: 1; /* 50% Height of Right Column */
+  /* flex: 1;  <-- DELETE THIS */
   overflow-y: auto;
   border-bottom: 4px solid #ddd;
 }
 
 /* 4. Console (Bottom Right) */
 .console-area {
-  flex: 1; /* 50% Height of Right Column */
+  /* flex: 1;  <-- DELETE THIS */
   background-color: #1e1e1e;
   color: #0f0;
   display: flex;
