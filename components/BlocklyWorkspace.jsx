@@ -165,7 +165,7 @@ export default function BlocklyWorkspace({ onChange }) {
       const zoomToFit = new ZoomToFitControl(workspace.current);
       zoomToFit.init();
 
-      // --- FIX: Check registry before init to prevent crash ---
+      // Check registry before init to prevent crash
       if (!Blockly.ContextMenuRegistry.registry.getItem('blockCopyToStorage')) {
         const crossTab = new CrossTabCopyPaste();
         crossTab.init({ contextMenu: true, shortcut: true }, () => {});
@@ -176,6 +176,30 @@ export default function BlocklyWorkspace({ onChange }) {
 
       const modal = new Modal(workspace.current);
       modal.init();
+
+      // --- [FIXED] OVERRIDE GENERATOR HERE ---
+      pythonGenerator.forBlock['controls_for'] = function(block) {
+        const variable = pythonGenerator.getVariableName(block.getFieldValue('VAR'));
+        
+        // Use ORDER_NONE (99) for standard inputs
+        const from = pythonGenerator.valueToCode(block, 'FROM', pythonGenerator.ORDER_NONE) || '0';
+        
+        // FIX: Use ORDER_ADDITIVE instead of ORDER_ADDITION for Python!
+        const to = pythonGenerator.valueToCode(block, 'TO', pythonGenerator.ORDER_ADDITIVE) || '0';
+        
+        const step = pythonGenerator.valueToCode(block, 'BY', pythonGenerator.ORDER_NONE) || '1';
+
+        let rangeCode;
+        if (step === '1') {
+            rangeCode = `range(${from}, ${to})`;
+        } else {
+            rangeCode = `range(${from}, ${to}, ${step})`;
+        }
+
+        let branch = pythonGenerator.statementToCode(block, 'DO') || pythonGenerator.PASS;
+        return `for ${variable} in ${rangeCode}:\n${branch}`;
+      };
+      // --- END OVERRIDE ---
 
       // 4. EVENT LISTENER
       workspace.current.addChangeListener((event) => {
@@ -194,20 +218,27 @@ export default function BlocklyWorkspace({ onChange }) {
         }
       });
       
-      // 5. TRIGGER INITIAL RESIZE
-      setTimeout(() => {
-        window.dispatchEvent(new Event('resize'));
-      }, 100);
+      // 5. RESIZE OBSERVER
+      const observer = new ResizeObserver(() => {
+        if (workspace.current) {
+          Blockly.svgResize(workspace.current);
+        }
+      });
+      observer.observe(blocklyDiv.current);
+      blocklyDiv.current.resizeObserver = observer;
     }
 
-    // --- CLEANUP FUNCTION ---
+    // --- CLEANUP FUNCTION (MUST BE LAST) ---
     return () => {
       if (workspace.current) {
         workspace.current.dispose(); 
         workspace.current = null;    
       }
+      if (blocklyDiv.current && blocklyDiv.current.resizeObserver) {
+        blocklyDiv.current.resizeObserver.disconnect();
+      }
     };
-  }, []); 
+  }, []); // Empty dependency array
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
