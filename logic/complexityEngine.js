@@ -6,7 +6,6 @@ export function analyzeLineByLine(ast) {
   let totalComplexity = "O(1)";
 
   // Rank: Higher number = Slower code
-  // Used for calculating the "Total" at the top of the screen
   const ranks = { "O(1)": 1, "O(log n)": 2, "O(n)": 3, "O(n log n)": 4, "O(n^2)": 5, "O(n^3)": 6 };
 
   function getRank(c) {
@@ -15,47 +14,40 @@ export function analyzeLineByLine(ast) {
     return map[c] || 1;
   }
 
-  // --- NEW HELPER: MULTIPLY COMPLEXITY BY LOOP DEPTH ---
-  // e.g., base="O(1)", depth=1  -> Returns "O(n)"
-  // e.g., base="O(n)", depth=1  -> Returns "O(n^2)"
+  // --- HELPER: MULTIPLY COMPLEXITY BY LOOP DEPTH ---
   function multiplyComplexity(base, depth) {
     if (depth === 0) return base;
     
     let isLog = base.includes("log n");
     let power = 0;
 
-    // 1. Extract existing power from base
+    // 1. Extract existing power
     if (base.includes("O(1)")) {
         power = 0;
     } else if (base.includes("O(n^")) {
-        // Extract number from O(n^2)
         power = parseInt(base.split("^")[1]); 
     } else if (base.includes("O(n")) {
-        // Matches O(n) or O(n log n)
         power = 1;
     }
 
     // 2. Add Loop Depth
     power += depth;
 
-    // 3. Reconstruct String
+    // 3. Reconstruct
     if (power === 0) return "O(1)";
     if (power === 1) return isLog ? "O(n log n)" : "O(n)";
     return isLog ? `O(n^${power} log n)` : `O(n^${power})`;
   }
 
-  // --- RECURSIVE COMPLEXITY WEIGHT ---
-  // Calculates the complexity of a SINGLE execution of the block
+  // --- BLOCK WEIGHT ---
   function getBlockWeight(node) {
     if (!node) return "O(1)";
 
     let myComplexity = "O(1)";
 
-    // 1. Specific Blocks
     if (node.type === "lists_sort") myComplexity = "O(n log n)";
     else if (["lists_indexOf", "text_indexOf"].includes(node.type)) myComplexity = "O(n)";
     
-    // 2. Bubble up from Inputs
     if (node.children) {
       node.children.forEach(child => {
         const childComplexity = getBlockWeight(child);
@@ -64,14 +56,24 @@ export function analyzeLineByLine(ast) {
         }
       });
     }
-
     return myComplexity;
   }
 
-  // --- CODE RECONSTRUCTOR (Keep your existing fixes) ---
+  // --- CODE RECONSTRUCTOR ---
   function reconstructCode(node) {
     if (!node) return "...";
     
+    // --- 1. FUNCTIONS (NEW) ---
+    if (node.type === "procedures_defnoreturn" || node.type === "procedures_defreturn") {
+      const name = node.fields?.NAME || "function";
+      return `def ${name}(...):`;
+    }
+    if (node.type === "procedures_callnoreturn" || node.type === "procedures_callreturn") {
+      const name = node.fields?.NAME || "function";
+      return `${name}(...)`;
+    }
+
+    // --- 2. EXISTING HANDLERS ---
     if (node.type === "variables_get") return node.fields?.VAR?.name || "variable";
 
     if (node.type === "controls_repeat_ext") {
@@ -90,14 +92,8 @@ export function analyzeLineByLine(ast) {
 
     if (node.type === "lists_create_with") {
       if (!node.children || node.children.length === 0) return "[]";
-      const elements = node.children.map(child => reconstructCode(child)).join(", ");
-      return `[${elements}]`;
-    }
-
-    if (node.type === "lists_repeat") {
-       const item = reconstructCode(node.children[0]);
-       const times = reconstructCode(node.children[1]);
-       return `[${item}] * ${times}`;
+      // Simplified list display
+      return `[ ... ]`;
     }
 
     if (node.type === "controls_for") {
@@ -129,33 +125,34 @@ export function analyzeLineByLine(ast) {
   function traverseStatement(node, depth = 0) {
     if (!node) return;
 
+    // --- UPDATED ALLOW LIST: Added "procedures_..." ---
     const statementBlocks = [
       "variables_set", "controls_if", "controls_for", 
       "controls_forEach", "controls_whileUntil", "controls_repeat_ext",
-      "text_print", "lists_setIndex", "math_change"
+      "text_print", "lists_setIndex", "math_change",
+      "procedures_defnoreturn", "procedures_defreturn", "procedures_callnoreturn"
     ];
 
     let lineComplexity = "O(1)";
     let color = "#27ae60"; // Green
 
-    // 1. IS IT A LOOP HEADER?
-    // The header itself runs N times (or N^depth times if nested)
+    // 1. IS IT A LOOP?
     if (["controls_for", "controls_forEach", "controls_whileUntil", "controls_repeat_ext"].includes(node.type)) {
-      // Loop Logic: A loop at depth 0 is O(n). A loop at depth 1 is O(n^2).
       const power = depth + 1;
       lineComplexity = (power === 1) ? "O(n)" : `O(n^${power})`;
       color = "#e67e22"; // Orange
     } 
+    // 2. IS IT A FUNCTION DEF?
+    else if (["procedures_defnoreturn", "procedures_defreturn"].includes(node.type)) {
+       // Function definition itself is O(1). The code inside matters.
+       lineComplexity = "O(1)";
+       color = "#8e44ad"; // Purple
+    }
+    // 3. NORMAL STATEMENT
     else {
-      // 2. IS IT A NORMAL STATEMENT?
-      // First, get its single-execution cost (e.g., print is O(1))
       const baseWeight = getBlockWeight(node);
-      
-      // Then, multiply by the loop depth (This is what your prof wants!)
-      // O(1) inside a loop becomes O(n).
       lineComplexity = multiplyComplexity(baseWeight, depth);
 
-      // Color coding
       if (getRank(lineComplexity) >= 4) color = "#e74c3c"; // Red
       else if (getRank(lineComplexity) === 3) color = "#2980b9"; // Blue
     }
@@ -176,9 +173,10 @@ export function analyzeLineByLine(ast) {
     // Recurse into children
     if (node.children) {
       node.children.forEach(child => {
+        // --- FIX: Check if the child is in our Allowed List ---
         if (statementBlocks.includes(child.type)) {
            const isLoop = ["controls_for", "controls_forEach", "controls_whileUntil", "controls_repeat_ext"].includes(node.type);
-           // If current node is a loop, increment depth for the children
+           // Recursion: If it's a loop, depth increases. If it's a function, depth stays same (or resets? Usually same context).
            traverseStatement(child, depth + (isLoop ? 1 : 0));
         }
       });
@@ -187,10 +185,12 @@ export function analyzeLineByLine(ast) {
 
   if (ast) {
     ast.forEach(node => {
+       // --- UPDATED ROOT CHECK: Include Functions ---
        const isStatement = [
         "variables_set", "controls_if", "controls_for", 
         "controls_forEach", "controls_whileUntil", "controls_repeat_ext",
-        "text_print", "lists_setIndex", "math_change"
+        "text_print", "lists_setIndex", "math_change",
+        "procedures_defnoreturn", "procedures_defreturn", "procedures_callnoreturn"
       ].includes(node.type);
 
       if (isStatement) traverseStatement(node);
