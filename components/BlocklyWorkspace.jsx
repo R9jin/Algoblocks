@@ -165,7 +165,6 @@ export default function BlocklyWorkspace({ onChange }) {
       const zoomToFit = new ZoomToFitControl(workspace.current);
       zoomToFit.init();
 
-      // Check registry before init to prevent crash
       if (!Blockly.ContextMenuRegistry.registry.getItem('blockCopyToStorage')) {
         const crossTab = new CrossTabCopyPaste();
         crossTab.init({ contextMenu: true, shortcut: true }, () => {});
@@ -177,16 +176,11 @@ export default function BlocklyWorkspace({ onChange }) {
       const modal = new Modal(workspace.current);
       modal.init();
 
-      // --- [FIXED] OVERRIDE GENERATOR HERE ---
+      // --- [FIX] 1. CLEANER LOOPS (No Helper Functions) ---
       pythonGenerator.forBlock['controls_for'] = function(block) {
         const variable = pythonGenerator.getVariableName(block.getFieldValue('VAR'));
-        
-        // Use ORDER_NONE (99) for standard inputs
         const from = pythonGenerator.valueToCode(block, 'FROM', pythonGenerator.ORDER_NONE) || '0';
-        
-        // FIX: Use ORDER_ADDITIVE instead of ORDER_ADDITION for Python!
         const to = pythonGenerator.valueToCode(block, 'TO', pythonGenerator.ORDER_ADDITIVE) || '0';
-        
         const step = pythonGenerator.valueToCode(block, 'BY', pythonGenerator.ORDER_NONE) || '1';
 
         let rangeCode;
@@ -199,7 +193,51 @@ export default function BlocklyWorkspace({ onChange }) {
         let branch = pythonGenerator.statementToCode(block, 'DO') || pythonGenerator.PASS;
         return `for ${variable} in ${rangeCode}:\n${branch}`;
       };
-      // --- END OVERRIDE ---
+
+      pythonGenerator.forBlock['lists_getIndex'] = function(block) {
+        const mode = block.getFieldValue('MODE') || 'GET';
+        const where = block.getFieldValue('WHERE') || 'FROM_START';
+        const list = pythonGenerator.valueToCode(block, 'VALUE', pythonGenerator.ORDER_MEMBER) || '[]';
+        
+        if (where === 'FROM_START') {
+            const at = pythonGenerator.valueToCode(block, 'AT', pythonGenerator.ORDER_NONE) || '0';
+            
+            // STOP THE SUBTRACTION!
+            // We just use 'at' directly. 
+            // If block says "j", Python gets "j".
+            const indexCode = at; 
+            
+            if (mode === 'GET') {
+                return [`${list}[${indexCode}]`, pythonGenerator.ORDER_MEMBER];
+            } else if (mode === 'REMOVE') {
+                return `${list}.pop(${indexCode})\n`;
+            }
+        }
+        // Fallback for other modes
+        return [`${list}[0]`, pythonGenerator.ORDER_MEMBER]; 
+      };
+
+      // --- [FIX] 3. RAW LIST SET (Exact Index, No Math) ---
+      pythonGenerator.forBlock['lists_setIndex'] = function(block) {
+        const list = pythonGenerator.valueToCode(block, 'LIST', pythonGenerator.ORDER_MEMBER) || 'list';
+        const mode = block.getFieldValue('MODE') || 'SET';
+        const where = block.getFieldValue('WHERE') || 'FROM_START';
+        const value = pythonGenerator.valueToCode(block, 'TO', pythonGenerator.ORDER_NONE) || 'None';
+        
+        if (where === 'FROM_START') {
+            const at = pythonGenerator.valueToCode(block, 'AT', pythonGenerator.ORDER_NONE) || '0';
+             
+            // STOP THE SUBTRACTION!
+            const indexCode = at; 
+            
+            if (mode === 'SET') {
+                return `${list}[${indexCode}] = ${value}\n`;
+            } else if (mode === 'INSERT') {
+                return `${list}.insert(${indexCode}, ${value})\n`;
+            }
+        }
+        return `${list}[0] = ${value}\n`;
+      };
 
       // 4. EVENT LISTENER
       workspace.current.addChangeListener((event) => {
@@ -228,7 +266,7 @@ export default function BlocklyWorkspace({ onChange }) {
       blocklyDiv.current.resizeObserver = observer;
     }
 
-    // --- CLEANUP FUNCTION (MUST BE LAST) ---
+    // --- CLEANUP FUNCTION ---
     return () => {
       if (workspace.current) {
         workspace.current.dispose(); 
@@ -238,7 +276,7 @@ export default function BlocklyWorkspace({ onChange }) {
         blocklyDiv.current.resizeObserver.disconnect();
       }
     };
-  }, []); // Empty dependency array
+  }, []); 
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
