@@ -5,17 +5,30 @@ export function buildAST(workspaceJson) {
     return [];
   }
 
+  // Helper to recursively parse a block and its full chain of children
   function parseBlock(block) {
     const node = {
       type: block.type,
-      fields: block.fields || {}, // <--- ADD THIS LINE
+      fields: block.fields || {},
       children: []
     };
 
+    // 1. Inputs (Like "DO" in loops, "STACK" in functions, or "IF" conditions)
     if (block.inputs) {
       Object.values(block.inputs).forEach(input => {
-        if (input.block) {
-          node.children.push(parseBlock(input.block));
+        // FIX: The input points to the *first* block. 
+        // We must verify if there's a chain (next, next, next...) and add them all.
+        let currentBlock = input.block;
+        
+        while (currentBlock) {
+          node.children.push(parseBlock(currentBlock));
+          
+          // Move to the next block in the stack
+          if (currentBlock.next && currentBlock.next.block) {
+            currentBlock = currentBlock.next.block;
+          } else {
+            currentBlock = null;
+          }
         }
       });
     }
@@ -24,13 +37,21 @@ export function buildAST(workspaceJson) {
   }
 
   const ast = [];
-  function unwindChain(block) {
-      ast.push(parseBlock(block));
-      if (block.next && block.next.block) {
-          unwindChain(block.next.block);
+
+  // 2. Parse Top-Level Blocks (Unwind the main chain)
+  if (workspaceJson.blocks && workspaceJson.blocks.blocks) {
+    workspaceJson.blocks.blocks.forEach(rootBlock => {
+      let currentBlock = rootBlock;
+      while (currentBlock) {
+        ast.push(parseBlock(currentBlock));
+        if (currentBlock.next && currentBlock.next.block) {
+          currentBlock = currentBlock.next.block;
+        } else {
+          currentBlock = null;
+        }
       }
+    });
   }
 
-  workspaceJson.blocks.blocks.forEach(b => unwindChain(b));
   return ast;
 }

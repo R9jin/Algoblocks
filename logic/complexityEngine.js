@@ -21,7 +21,6 @@ export function analyzeLineByLine(ast) {
     let isLog = base.includes("log n");
     let power = 0;
 
-    // 1. Extract existing power
     if (base.includes("O(1)")) {
         power = 0;
     } else if (base.includes("O(n^")) {
@@ -30,10 +29,8 @@ export function analyzeLineByLine(ast) {
         power = 1;
     }
 
-    // 2. Add Loop Depth
     power += depth;
 
-    // 3. Reconstruct
     if (power === 0) return "O(1)";
     if (power === 1) return isLog ? "O(n log n)" : "O(n)";
     return isLog ? `O(n^${power} log n)` : `O(n^${power})`;
@@ -63,7 +60,7 @@ export function analyzeLineByLine(ast) {
   function reconstructCode(node) {
     if (!node) return "...";
     
-    // --- 1. FUNCTIONS (NEW) ---
+    // 1. FUNCTIONS
     if (node.type === "procedures_defnoreturn" || node.type === "procedures_defreturn") {
       const name = node.fields?.NAME || "function";
       return `def ${name}(...):`;
@@ -73,14 +70,8 @@ export function analyzeLineByLine(ast) {
       return `${name}(...)`;
     }
 
-    // --- 2. EXISTING HANDLERS ---
+    // 2. VARIABLES
     if (node.type === "variables_get") return node.fields?.VAR?.name || "variable";
-
-    if (node.type === "controls_repeat_ext") {
-       const times = node.children[0] ? reconstructCode(node.children[0]) : "n";
-       return `for count in range(${times}):`;
-    }
-
     if (node.type === "variables_set") {
       const varName = node.fields?.VAR?.name || "item"; 
       const valueNode = node.children[0]; 
@@ -88,26 +79,26 @@ export function analyzeLineByLine(ast) {
       return `${varName} = ${valueStr}`;
     }
 
-    if (node.type === "math_number") return node.fields?.NUM || "0";
-
-    if (node.type === "lists_create_with") {
-      if (!node.children || node.children.length === 0) return "[]";
-      // Simplified list display
-      return `[ ... ]`;
+    // 3. LOOPS
+    if (node.type === "controls_repeat_ext") {
+       const times = node.children[0] ? reconstructCode(node.children[0]) : "n";
+       return `for count in range(${times}):`;
     }
-
     if (node.type === "controls_for") {
       const varName = node.fields?.VAR?.name || "i";
       return `for ${varName} in range(...):`;
     }
-    
     if (node.type === "controls_forEach") {
        const varName = node.fields?.VAR?.name || "item";
        return `for ${varName} in list:`;
     }
 
+    // 4. DATA TYPES
+    if (node.type === "math_number") return node.fields?.NUM || "0";
     if (node.type === "text") return `"${node.fields?.TEXT || ""}"`;
-    
+    if (node.type === "lists_create_with") return `[ ... ]`;
+
+    // 5. PRINT
     if (node.type === "text_print") {
         const content = node.children[0] ? reconstructCode(node.children[0]) : "";
         return `print(${content})`;
@@ -125,7 +116,7 @@ export function analyzeLineByLine(ast) {
   function traverseStatement(node, depth = 0) {
     if (!node) return;
 
-    // --- UPDATED ALLOW LIST: Added "procedures_..." ---
+    // ALLOW LIST (Include Procedures!)
     const statementBlocks = [
       "variables_set", "controls_if", "controls_for", 
       "controls_forEach", "controls_whileUntil", "controls_repeat_ext",
@@ -144,7 +135,6 @@ export function analyzeLineByLine(ast) {
     } 
     // 2. IS IT A FUNCTION DEF?
     else if (["procedures_defnoreturn", "procedures_defreturn"].includes(node.type)) {
-       // Function definition itself is O(1). The code inside matters.
        lineComplexity = "O(1)";
        color = "#8e44ad"; // Purple
     }
@@ -173,10 +163,9 @@ export function analyzeLineByLine(ast) {
     // Recurse into children
     if (node.children) {
       node.children.forEach(child => {
-        // --- FIX: Check if the child is in our Allowed List ---
         if (statementBlocks.includes(child.type)) {
            const isLoop = ["controls_for", "controls_forEach", "controls_whileUntil", "controls_repeat_ext"].includes(node.type);
-           // Recursion: If it's a loop, depth increases. If it's a function, depth stays same (or resets? Usually same context).
+           // NOTE: Function definitions do not increase loop depth, only loops do.
            traverseStatement(child, depth + (isLoop ? 1 : 0));
         }
       });
@@ -185,7 +174,6 @@ export function analyzeLineByLine(ast) {
 
   if (ast) {
     ast.forEach(node => {
-       // --- UPDATED ROOT CHECK: Include Functions ---
        const isStatement = [
         "variables_set", "controls_if", "controls_for", 
         "controls_forEach", "controls_whileUntil", "controls_repeat_ext",
