@@ -5,7 +5,7 @@ import * as En from "blockly/msg/en";
 import { pythonGenerator } from "blockly/python";
 import { useEffect, useRef } from "react";
 
-// --- 1. ADD MISSING PLUGIN IMPORTS ---
+// --- PLUGIN IMPORTS ---
 import { CrossTabCopyPaste } from "@blockly/plugin-cross-tab-copy-paste";
 import { Modal } from "@blockly/plugin-modal";
 import { WorkspaceSearch } from "@blockly/plugin-workspace-search";
@@ -14,7 +14,7 @@ import { ZoomToFitControl } from "@blockly/zoom-to-fit";
 
 Blockly.setLocale(En);
 
-// --- FULL STANDARD TOOLBOX ---
+// --- TOOLBOX CONFIGURATION ---
 const toolbox = {
   kind: "categoryToolbox",
   contents: [
@@ -127,29 +127,6 @@ const toolbox = {
         { kind: "block", type: "lists_sort" },
       ],
     },
-    {
-      kind: "category",
-      name: "Colour",
-      colour: "20",
-      contents: [
-        { kind: "block", type: "colour_picker" },
-        { kind: "block", type: "colour_random" },
-        { kind: "block", type: "colour_rgb",
-          inputs: {
-            RED: { shadow: { type: "math_number", fields: { NUM: 100 } } },
-            GREEN: { shadow: { type: "math_number", fields: { NUM: 50 } } },
-            BLUE: { shadow: { type: "math_number", fields: { NUM: 0 } } }
-          }
-        },
-        { kind: "block", type: "colour_blend",
-          inputs: {
-            COLOUR1: { shadow: { type: "colour_picker", fields: { COLOUR: "#ff0000" } } },
-            COLOUR2: { shadow: { type: "colour_picker", fields: { COLOUR: "#3333ff" } } },
-            RATIO: { shadow: { type: "math_number", fields: { NUM: 0.5 } } }
-          }
-        },
-      ],
-    },
     { kind: "sep" },
     { kind: "category", name: "Variables", colour: "330", custom: "VARIABLE" },
     { kind: "category", name: "Functions", colour: "290", custom: "PROCEDURE" },
@@ -159,9 +136,15 @@ const toolbox = {
 export default function BlocklyWorkspace({ onChange }) {
   const blocklyDiv = useRef(null);
   const workspace = useRef(null);
+  const onChangeRef = useRef(onChange);
+
+  // Keep ref updated
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   useEffect(() => {
-    // 1. Safety Check: If workspace already exists, don't create another
+    // 1. Safety Check
     if (workspace.current) return;
 
     if (blocklyDiv.current) {
@@ -182,8 +165,11 @@ export default function BlocklyWorkspace({ onChange }) {
       const zoomToFit = new ZoomToFitControl(workspace.current);
       zoomToFit.init();
 
-      const crossTab = new CrossTabCopyPaste();
-      crossTab.init({ contextMenu: true, shortcut: true }, () => {});
+      // --- FIX: Check registry before init to prevent crash ---
+      if (!Blockly.ContextMenuRegistry.registry.getItem('blockCopyToStorage')) {
+        const crossTab = new CrossTabCopyPaste();
+        crossTab.init({ contextMenu: true, shortcut: true }, () => {});
+      }
 
       const minimap = new PositionedMinimap(workspace.current);
       minimap.init();
@@ -201,12 +187,17 @@ export default function BlocklyWorkspace({ onChange }) {
         ) {
           const json = Blockly.serialization.workspaces.save(workspace.current);
           const code = pythonGenerator.workspaceToCode(workspace.current);
-          onChange(json, code);
+          
+          if (onChangeRef.current) {
+            onChangeRef.current(json, code);
+          }
         }
       });
       
       // 5. TRIGGER INITIAL RESIZE
-      window.dispatchEvent(new Event('resize'));
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 100);
     }
 
     // --- CLEANUP FUNCTION ---
@@ -216,7 +207,7 @@ export default function BlocklyWorkspace({ onChange }) {
         workspace.current = null;    
       }
     };
-  }, [onChange]); // IMPORTANT: Ensure 'onChange' in App.jsx doesn't change on every render!
+  }, []); 
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
