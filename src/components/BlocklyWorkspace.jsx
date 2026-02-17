@@ -14,6 +14,34 @@ import { ZoomToFitControl } from "@blockly/zoom-to-fit";
 
 Blockly.setLocale(En);
 
+// --- 1. DEFINE CUSTOM COMMENT BLOCK ---
+// We define it here so it's registered before the workspace loads
+const customBlocks = [
+  {
+    "type": "comment_block",
+    "message0": "Comment %1",
+    "args0": [
+      {
+        "type": "field_input",
+        "name": "TEXT",
+        "text": "write note here"
+      }
+    ],
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": "#999999", // Grey color for comments
+    "tooltip": "Adds a comment to the Python code (ignored by the computer)",
+    "helpUrl": ""
+  }
+];
+
+// Register the block
+if (Blockly.common && Blockly.common.defineBlocksWithJsonArray) {
+  Blockly.common.defineBlocksWithJsonArray(customBlocks);
+} else {
+  Blockly.defineBlocksWithJsonArray(customBlocks);
+}
+
 // --- TOOLBOX CONFIGURATION ---
 const toolbox = {
   kind: "categoryToolbox",
@@ -91,6 +119,7 @@ const toolbox = {
       name: "Text",
       colour: "160",
       contents: [
+        { kind: "block", type: "comment_block" }, 
         { kind: "block", type: "text" },
         { kind: "block", type: "text_join" },
         { kind: "block", type: "text_append" },
@@ -176,6 +205,13 @@ export default function BlocklyWorkspace({ onChange }) {
       const modal = new Modal(workspace.current);
       modal.init();
 
+      // --- [NEW] GENERATOR FOR COMMENT BLOCK ---
+      pythonGenerator.forBlock['comment_block'] = function(block) {
+        const text = block.getFieldValue('TEXT');
+        // Returns a Python comment string
+        return `# ${text}\n`;
+      };
+
       // --- [FIX] 1. CLEANER LOOPS (No Helper Functions) ---
       pythonGenerator.forBlock['controls_for'] = function(block) {
         const variable = pythonGenerator.getVariableName(block.getFieldValue('VAR'));
@@ -194,6 +230,7 @@ export default function BlocklyWorkspace({ onChange }) {
         return `for ${variable} in ${rangeCode}:\n${branch}`;
       };
 
+      // --- [FIX] 2. RAW LIST GET (Exact Index) ---
       pythonGenerator.forBlock['lists_getIndex'] = function(block) {
         const mode = block.getFieldValue('MODE') || 'GET';
         const where = block.getFieldValue('WHERE') || 'FROM_START';
@@ -201,23 +238,17 @@ export default function BlocklyWorkspace({ onChange }) {
         
         if (where === 'FROM_START') {
             const at = pythonGenerator.valueToCode(block, 'AT', pythonGenerator.ORDER_NONE) || '0';
-            
-            // STOP THE SUBTRACTION!
-            // We just use 'at' directly. 
-            // If block says "j", Python gets "j".
             const indexCode = at; 
-            
             if (mode === 'GET') {
                 return [`${list}[${indexCode}]`, pythonGenerator.ORDER_MEMBER];
             } else if (mode === 'REMOVE') {
                 return `${list}.pop(${indexCode})\n`;
             }
         }
-        // Fallback for other modes
         return [`${list}[0]`, pythonGenerator.ORDER_MEMBER]; 
       };
 
-      // --- [FIX] 3. RAW LIST SET (Exact Index, No Math) ---
+      // --- [FIX] 3. RAW LIST SET (Exact Index) ---
       pythonGenerator.forBlock['lists_setIndex'] = function(block) {
         const list = pythonGenerator.valueToCode(block, 'LIST', pythonGenerator.ORDER_MEMBER) || 'list';
         const mode = block.getFieldValue('MODE') || 'SET';
@@ -226,10 +257,7 @@ export default function BlocklyWorkspace({ onChange }) {
         
         if (where === 'FROM_START') {
             const at = pythonGenerator.valueToCode(block, 'AT', pythonGenerator.ORDER_NONE) || '0';
-             
-            // STOP THE SUBTRACTION!
             const indexCode = at; 
-            
             if (mode === 'SET') {
                 return `${list}[${indexCode}] = ${value}\n`;
             } else if (mode === 'INSERT') {
@@ -238,6 +266,41 @@ export default function BlocklyWorkspace({ onChange }) {
         }
         return `${list}[0] = ${value}\n`;
       };
+
+      // --- [FIX] 4. LOCAL VARIABLES IN FUNCTIONS (Critical for Recursion) ---
+      // This stops Blockly from writing "global n, mid, i" inside functions.
+      const procedureGenerator = function(block) {
+        const funcName = pythonGenerator.getProcedureName(block.getFieldValue('NAME'));
+        let branch = pythonGenerator.statementToCode(block, 'STACK');
+        
+        // Handle "Do" vs "Return"
+        let returnValue = '';
+        if (block.type === 'procedures_defreturn') {
+            returnValue = pythonGenerator.valueToCode(block, 'RETURN', pythonGenerator.ORDER_NONE) || '';
+            if (returnValue) {
+                returnValue = pythonGenerator.INDENT + 'return ' + returnValue + '\n';
+            }
+        }
+
+        // Handle arguments
+        const args = [];
+        const variables = block.getVars();
+        for (let i = 0; i < variables.length; i++) {
+            args[i] = pythonGenerator.getVariableName(variables[i]);
+        }
+
+        // If the function is empty, add 'pass'
+        if (!branch && !returnValue) {
+            branch = pythonGenerator.PASS;
+        }
+
+        // --- THE MAGIC: We intentionally SKIPPED the "global" declaration part ---
+        return 'def ' + funcName + '(' + args.join(', ') + '):\n' + branch + returnValue;
+      };
+
+      // Apply this generator to both types of functions
+      pythonGenerator.forBlock['procedures_defnoreturn'] = procedureGenerator;
+      pythonGenerator.forBlock['procedures_defreturn'] = procedureGenerator;
 
       // 4. EVENT LISTENER
       workspace.current.addChangeListener((event) => {
