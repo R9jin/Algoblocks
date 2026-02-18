@@ -3,7 +3,7 @@ import "blockly/blocks";
 import * as Blockly from "blockly/core";
 import * as En from "blockly/msg/en";
 import { pythonGenerator } from "blockly/python";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react"; // <--- CHANGED
 
 // --- PLUGIN IMPORTS ---
 import { CrossTabCopyPaste } from "@blockly/plugin-cross-tab-copy-paste";
@@ -268,9 +268,6 @@ export default function BlocklyWorkspace({ onChange }) {
         return `${list}[0] = ${value}\n`;
       };
 
-      // --- [NEW] THE NONE ERASER ---
-      // This function runs at the very end of code generation.
-      // It deletes all the "x = None" declarations Blockly usually adds.
       pythonGenerator.finish = function(code) {
         const definitions = Object.values(pythonGenerator.definitions_);
         
@@ -280,7 +277,9 @@ export default function BlocklyWorkspace({ onChange }) {
         definitions.forEach(def => {
             if (def.includes('import')) {
                 imports.push(def);
-            } else {
+            } else if (def.trim().startsWith('def ')) { 
+                // ONLY keep functions (lines starting with 'def')
+                // This explicitly ignores 'swapped = None' or 'i = None'
                 funcs.push(def);
             }
         });
