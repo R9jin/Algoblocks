@@ -1,6 +1,6 @@
 // src/App.jsx
 import { useState } from "react";
-import Split from "react-split"; // <--- IMPORT THIS
+import Split from "react-split";
 import BlocklyWorkspace from "./components/BlocklyWorkspace.jsx";
 import { buildAST } from "./logic/astBuilder";
 import { analyzeLineByLine } from "./logic/complexityEngine";
@@ -9,45 +9,32 @@ export default function App() {
   const [analysisResult, setAnalysisResult] = useState({ lines: [], total: "O(1)" });
   const [generatedPython, setGeneratedPython] = useState("# Drag blocks to generate Python code");
   const [consoleOutput, setConsoleOutput] = useState("Ready to run...");
-
-  // NEW STATE: Shote the JSON configuration
   const [blocklyJson, setBlocklyJson] = useState(null);
 
   const handleBlocklyChange = (json, pythonCode) => {
     setGeneratedPython(pythonCode);
-
-    // Capture the JSON
     setBlocklyJson(json);
-
     const ast = buildAST(json);
     const report = analyzeLineByLine(ast);
     setAnalysisResult(report);
   };
 
-  // NEW FUNCTION: Download the JSON file
   const saveConfiguration = () => {
     if (!blocklyJson) {
-      alert("No blocks to save!"); 
-      return;
+        alert("No blocks to save!");
+        return;
     }
-
-    // Convert JSON object to a string
-    const jsonString = JSON. stringify(blocklyJson, null, 2);
-
-    // Create a "Blob" (File-like object)
-    const blob = new Blob([jsonString, { type: "application/json" }]);
-
-    // Create a fake download link and click it
+    const jsonString = JSON.stringify(blocklyJson, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "my-algorithm.json"; // file name
+    link.download = "my-algorithm.json";
+    document.body.appendChild(link);
     link.click();
-    
-    // Cleanup
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  }
+  };
 
   const runCode = () => {
     setConsoleOutput("> Running...");
@@ -82,26 +69,23 @@ export default function App() {
     <div className="app-container">
       <header className="app-header">
         <div className="header-left-group">
-          <h1>AlgoBlocks</h1>
-          <button className="save-button" onClick={saveConfiguration}>
-              SAVE BLOCKS
-          </button>
+            <h1>AlgoBlocks</h1>
+            <button className="save-button" onClick={saveConfiguration}>
+                💾 SAVE BLOCKS
+            </button>
         </div>
         <div className="complexity-badge">
           Total Complexity: <strong>{analysisResult.total}</strong>
         </div>
       </header>
 
-      {/* --- MAIN SPLIT (Horizontal) --- */}
       <Split 
         className="main-content" 
-        sizes={[70, 30]} // Default: 70% Left, 30% Right
-        minSize={300}    // Minimum width in pixels
+        sizes={[70, 30]} 
+        minSize={300}    
         gutterSize={10} 
         snapOffset={30}
       >
-        
-        {/* --- LEFT COLUMN (Vertical Split) --- */}
         <Split 
           className="left-column" 
           direction="vertical" 
@@ -118,7 +102,6 @@ export default function App() {
           </div>
         </Split>
 
-        {/* --- RIGHT COLUMN (Vertical Split) --- */}
         <Split 
           className="right-column" 
           direction="vertical" 

@@ -14,29 +14,24 @@ import { ZoomToFitControl } from "@blockly/zoom-to-fit";
 
 Blockly.setLocale(En);
 
-// --- 1. DEFINE CUSTOM COMMENT BLOCK ---
-// We define it here so it's registered before the workspace loads
+// --- 1. DEFINE CUSTOM BLOCKS ---
 const customBlocks = [
+  // Existing Comment Block
   {
     "type": "comment_block",
     "message0": "Comment %1",
     "args0": [
-      {
-        "type": "field_input",
-        "name": "TEXT",
-        "text": "write note here"
-      }
+      { "type": "field_input", "name": "TEXT", "text": "write note here" }
     ],
     "previousStatement": null,
     "nextStatement": null,
-    "colour": "#999999", // Grey color for comments
-    "tooltip": "Adds a comment to the Python code (ignored by the computer)",
+    "colour": "#999999",
+    "tooltip": "Adds a comment to the Python code",
     "helpUrl": ""
   },
-
-  // MATH ASSIGNMENT (+=, -=, *=, /=)
+  // ---NEW: MATH ASSIGNMENT (+=, -=, *=, /=) ---
   {
-    "type": "math_increment",
+    "type": "math_assignment",
     "message0": "%1 %2 %3",
     "args0": [
       {
@@ -58,18 +53,17 @@ const customBlocks = [
         "type": "input_value",
         "name": "DELTA",
         "check": "Number"
-      },
+      }
     ],
-    "inputsInline" : true,
-    "previousStatement" : null,
-    "nextStatement" : null,
-    "colour" : 230,
-    "tooltip" : "Modify a variable (Add, Subtract, Multiply, Divide).",
-    "helpUrl" : ""
+    "inputsInline": true,
+    "previousStatement": null,
+    "nextStatement": null,
+    "colour": 230,
+    "tooltip": "Modify a variable (Add, Subtract, Multiply, Divide).",
+    "helpUrl": ""
   }
 ];
 
-// Register the block
 if (Blockly.common && Blockly.common.defineBlocksWithJsonArray) {
   Blockly.common.defineBlocksWithJsonArray(customBlocks);
 } else {
@@ -99,17 +93,9 @@ const toolbox = {
       name: "Loops",
       colour: "120",
       contents: [
-        { kind: "block", type: "controls_repeat_ext", 
-          inputs: { TIMES: { shadow: { type: "math_number", fields: { NUM: 10 } } } } 
-        },
+        { kind: "block", type: "controls_repeat_ext", inputs: { TIMES: { shadow: { type: "math_number", fields: { NUM: 10 } } } } },
         { kind: "block", type: "controls_whileUntil" },
-        { kind: "block", type: "controls_for",
-          inputs: { 
-            FROM: { shadow: { type: "math_number", fields: { NUM: 1 } } }, 
-            TO: { shadow: { type: "math_number", fields: { NUM: 10 } } },
-            BY: { shadow: { type: "math_number", fields: { NUM: 1 } } }
-          }
-        },
+        { kind: "block", type: "controls_for", inputs: { FROM: { shadow: { type: "math_number", fields: { NUM: 1 } } }, TO: { shadow: { type: "math_number", fields: { NUM: 10 } } }, BY: { shadow: { type: "math_number", fields: { NUM: 1 } } } } },
         { kind: "block", type: "controls_forEach" },
         { kind: "block", type: "controls_flow_statements" },
       ],
@@ -120,13 +106,9 @@ const toolbox = {
       colour: "230",
       contents: [
         { kind: "block", type: "math_number", fields: { NUM: 123 } },
-        { kind: "block", type: "math_arithmetic", 
-          inputs: { 
-            A: { shadow: { type: "math_number", fields: { NUM: 1 } } },
-            B: { shadow: { type: "math_number", fields: { NUM: 1 } } }
-          }
-        },
-        { kind: "block", type: "math_assignment"},
+        { kind: "block", type: "math_arithmetic", inputs: { A: { shadow: { type: "math_number", fields: { NUM: 1 } } }, B: { shadow: { type: "math_number", fields: { NUM: 1 } } } } },
+        // --- ADDED NEW BLOCK HERE ---
+        { kind: "block", type: "math_assignment" }, 
         { kind: "block", type: "math_single" },
         { kind: "block", type: "math_trig" },
         { kind: "block", type: "math_constant" },
@@ -134,18 +116,8 @@ const toolbox = {
         { kind: "block", type: "math_round" },
         { kind: "block", type: "math_on_list" },
         { kind: "block", type: "math_modulo" },
-        { kind: "block", type: "math_constrain",
-          inputs: {
-            LOW: { shadow: { type: "math_number", fields: { NUM: 1 } } },
-            HIGH: { shadow: { type: "math_number", fields: { NUM: 100 } } }
-          }
-        },
-        { kind: "block", type: "math_random_int",
-          inputs: {
-            FROM: { shadow: { type: "math_number", fields: { NUM: 1 } } },
-            TO: { shadow: { type: "math_number", fields: { NUM: 100 } } }
-          }
-        },
+        { kind: "block", type: "math_constrain", inputs: { LOW: { shadow: { type: "math_number", fields: { NUM: 1 } } }, HIGH: { shadow: { type: "math_number", fields: { NUM: 100 } } } } },
+        { kind: "block", type: "math_random_int", inputs: { FROM: { shadow: { type: "math_number", fields: { NUM: 1 } } }, TO: { shadow: { type: "math_number", fields: { NUM: 100 } } } } },
         { kind: "block", type: "math_random_float" },
       ],
     },
@@ -166,9 +138,7 @@ const toolbox = {
         { kind: "block", type: "text_changeCase" },
         { kind: "block", type: "text_trim" },
         { kind: "block", type: "text_print" },
-        { kind: "block", type: "text_prompt_ext", 
-          inputs: { TEXT: { shadow: { type: "text", fields: { TEXT: "abc" } } } } 
-        },
+        { kind: "block", type: "text_prompt_ext", inputs: { TEXT: { shadow: { type: "text", fields: { TEXT: "abc" } } } } },
       ],
     },
     {
@@ -178,9 +148,7 @@ const toolbox = {
       contents: [
         { kind: "block", type: "lists_create_with", extraState: { itemCount: 0 } },
         { kind: "block", type: "lists_create_with" },
-        { kind: "block", type: "lists_repeat",
-          inputs: { NUM: { shadow: { type: "math_number", fields: { NUM: 5 } } } }
-        },
+        { kind: "block", type: "lists_repeat", inputs: { NUM: { shadow: { type: "math_number", fields: { NUM: 5 } } } } },
         { kind: "block", type: "lists_length" },
         { kind: "block", type: "lists_isEmpty" },
         { kind: "block", type: "lists_indexOf" },
@@ -202,18 +170,14 @@ export default function BlocklyWorkspace({ onChange }) {
   const workspace = useRef(null);
   const onChangeRef = useRef(onChange);
 
-  // Keep ref updated
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
 
   useEffect(() => {
-    // 1. Safety Check
     if (workspace.current) return;
 
     if (blocklyDiv.current) {
-      
-      // 2. INJECT BLOCKLY
       workspace.current = Blockly.inject(blocklyDiv.current, {
         toolbox: toolbox,
         trashcan: true,
@@ -222,163 +186,123 @@ export default function BlocklyWorkspace({ onChange }) {
         renderer: "geras", 
       });
 
-      // 3. INITIALIZE PLUGINS
       const workspaceSearch = new WorkspaceSearch(workspace.current);
       workspaceSearch.init();
-
       const zoomToFit = new ZoomToFitControl(workspace.current);
       zoomToFit.init();
-
       if (!Blockly.ContextMenuRegistry.registry.getItem('blockCopyToStorage')) {
         const crossTab = new CrossTabCopyPaste();
         crossTab.init({ contextMenu: true, shortcut: true }, () => {});
       }
-
-      const minimap = new PositionedMinimap(workspace.current);
-      minimap.init();
-
+      constRPMinimap = new PositionedMinimap(workspace.current);
+      constRPMinimap.init();
       const modal = new Modal(workspace.current);
       modal.init();
 
-      // --- [NEW] GENERATOR FOR COMMENT BLOCK ---
+      // --- GENERATORS ---
+      
       pythonGenerator.forBlock['comment_block'] = function(block) {
         const text = block.getFieldValue('TEXT');
-        // Returns a Python comment string
         return `# ${text}\n`;
       };
 
-      // --- [FIX] 1. CLEANER LOOPS (No Helper Functions) ---
-      pythonGenerator.forBlock['controls_for'] = function(block) {
-        const variable = pythonGenerator.getVariableName(block.getFieldValue('VAR'));
-        const from = pythonGenerator.valueToCode(block, 'FROM', pythonGenerator.ORDER_NONE) || '0';
-        const to = pythonGenerator.valueToCode(block, 'TO', pythonGenerator.ORDER_ADDITIVE) || '0';
-        const step = pythonGenerator.valueToCode(block, 'BY', pythonGenerator.ORDER_NONE) || '1';
-
-        let rangeCode;
-        if (step === '1') {
-            rangeCode = `range(${from}, ${to})`;
-        } else {
-            rangeCode = `range(${from}, ${to}, ${step})`;
-        }
-
-        let branch = pythonGenerator.statementToCode(block, 'DO') || pythonGenerator.PASS;
-        return `for ${variable} in ${rangeCode}:\n${branch}`;
-      };
-
-      // --- [FIX] 2. RAW LIST GET (Exact Index) ---
-      pythonGenerator.forBlock['lists_getIndex'] = function(block) {
-        const mode = block.getFieldValue('MODE') || 'GET';
-        const where = block.getFieldValue('WHERE') || 'FROM_START';
-        const list = pythonGenerator.valueToCode(block, 'VALUE', pythonGenerator.ORDER_MEMBER) || '[]';
-        
-        if (where === 'FROM_START') {
-            const at = pythonGenerator.valueToCode(block, 'AT', pythonGenerator.ORDER_NONE) || '0';
-            const indexCode = at; 
-            if (mode === 'GET') {
-                return [`${list}[${indexCode}]`, pythonGenerator.ORDER_MEMBER];
-            } else if (mode === 'REMOVE') {
-                return `${list}.pop(${indexCode})\n`;
-            }
-        }
-        return [`${list}[0]`, pythonGenerator.ORDER_MEMBER]; 
-      };
-
-      // --- [FIX] 3. RAW LIST SET (Exact Index) ---
-      pythonGenerator.forBlock['lists_setIndex'] = function(block) {
-        const list = pythonGenerator.valueToCode(block, 'LIST', pythonGenerator.ORDER_MEMBER) || 'list';
-        const mode = block.getFieldValue('MODE') || 'SET';
-        const where = block.getFieldValue('WHERE') || 'FROM_START';
-        const value = pythonGenerator.valueToCode(block, 'TO', pythonGenerator.ORDER_NONE) || 'None';
-        
-        if (where === 'FROM_START') {
-            const at = pythonGenerator.valueToCode(block, 'AT', pythonGenerator.ORDER_NONE) || '0';
-            const indexCode = at; 
-            if (mode === 'SET') {
-                return `${list}[${indexCode}] = ${value}\n`;
-            } else if (mode === 'INSERT') {
-                return `${list}.insert(${indexCode}, ${value})\n`;
-            }
-        }
-        return `${list}[0] = ${value}\n`;
-      };
-
-      // Generator for math assignment
+      // --- NEW GENERATOR FOR MATH ASSIGNMENT ---
       pythonGenerator.forBlock['math_assignment'] = function(block) {
         const variable = pythonGenerator.getVariableName(block.getFieldValue('VAR'));
         const operator = block.getFieldValue('OP');
         const value = pythonGenerator.valueToCode(block, 'DELTA', pythonGenerator.ORDER_ADDITIVE) || '0';
-        
+
         let symbol = "+=";
         if (operator === "MINUS") symbol = "-=";
         else if (operator === "MULTIPLY") symbol = "*=";
         else if (operator === "DIVIDE") symbol = "/=";
 
         return `${variable} ${symbol} ${value}\n`;
-      }
+      };
 
-      // --- [FIX] 4. LOCAL VARIABLES IN FUNCTIONS (Critical for Recursion) ---
-      // This stops Blockly from writing "global n, mid, i" inside functions.
+      pythonGenerator.forBlock['controls_for'] = function(block) {
+        const variable = pythonGenerator.getVariableName(block.getFieldValue('VAR'));
+        const from = pythonGenerator.valueToCode(block, 'FROM', pythonGenerator.ORDER_NONE) || '0';
+        const to = pythonGenerator.valueToCode(block, 'TO', pythonGenerator.ORDER_ADDITIVE) || '0';
+        const step = pythonGenerator.valueToCode(block, 'BY', pythonGenerator.ORDER_NONE) || '1';
+        
+        let rangeCode;
+        
+        // logic for not generating clean range
+        if (step == '1') {
+          if (from == '0') {
+            rangeCode = `range(${to})`; // clean: range(n)
+          } else {
+            rangeCode = `range(${from}, ${to})`; //  normal: range (1, n)
+          }
+        } else {
+          rangeCode = `range(${from}, ${to}, ${step})`; // complex: range (0, n, 2)
+        }
+
+        let branch = pythonGenerator.statementToCode(block, 'DO') || pythonGenerator.PASS;
+        return `for ${variable} in ${rangeCode}:\n${branch}`;
+      };
+
+      pythonGenerator.forBlock['lists_getIndex'] = function(block) {
+        const mode = block.getFieldValue('MODE') || 'GET';
+        const where = block.getFieldValue('WHERE') || 'FROM_START';
+        const list = pythonGenerator.valueToCode(block, 'VALUE', pythonGenerator.ORDER_MEMBER) || '[]';
+        if (where === 'FROM_START') {
+            const at = pythonGenerator.valueToCode(block, 'AT', pythonGenerator.ORDER_NONE) || '0';
+            if (mode === 'GET') return [`${list}[${at}]`, pythonGenerator.ORDER_MEMBER];
+            else if (mode === 'REMOVE') return `${list}.pop(${at})\n`;
+        }
+        return [`${list}[0]`, pythonGenerator.ORDER_MEMBER]; 
+      };
+
+      pythonGenerator.forBlock['lists_setIndex'] = function(block) {
+        const list = pythonGenerator.valueToCode(block, 'LIST', pythonGenerator.ORDER_MEMBER) || 'list';
+        const mode = block.getFieldValue('MODE') || 'SET';
+        const where = block.getFieldValue('WHERE') || 'FROM_START';
+        const value = pythonGenerator.valueToCode(block, 'TO', pythonGenerator.ORDER_NONE) || 'None';
+        if (where === 'FROM_START') {
+            const at = pythonGenerator.valueToCode(block, 'AT', pythonGenerator.ORDER_NONE) || '0';
+            if (mode === 'SET') return `${list}[${at}] = ${value}\n`;
+            else if (mode === 'INSERT') return `${list}.insert(${at}, ${value})\n`;
+        }
+        return `${list}[0] = ${value}\n`;
+      };
+
       const procedureGenerator = function(block) {
         const funcName = pythonGenerator.getProcedureName(block.getFieldValue('NAME'));
         let branch = pythonGenerator.statementToCode(block, 'STACK');
-        
-        // Handle "Do" vs "Return"
         let returnValue = '';
         if (block.type === 'procedures_defreturn') {
             returnValue = pythonGenerator.valueToCode(block, 'RETURN', pythonGenerator.ORDER_NONE) || '';
-            if (returnValue) {
-                returnValue = pythonGenerator.INDENT + 'return ' + returnValue + '\n';
-            }
+            if (returnValue) returnValue = pythonGenerator.INDENT + 'return ' + returnValue + '\n';
         }
-
-        // Handle arguments
         const args = [];
         const variables = block.getVars();
         for (let i = 0; i < variables.length; i++) {
             args[i] = pythonGenerator.getVariableName(variables[i]);
         }
-
-        // If the function is empty, add 'pass'
-        if (!branch && !returnValue) {
-            branch = pythonGenerator.PASS;
-        }
-
-        // --- THE MAGIC: We intentionally SKIPPED the "global" declaration part ---
+        if (!branch && !returnValue) branch = pythonGenerator.PASS;
         return 'def ' + funcName + '(' + args.join(', ') + '):\n' + branch + returnValue;
       };
 
-      // Apply this generator to both types of functions
       pythonGenerator.forBlock['procedures_defnoreturn'] = procedureGenerator;
       pythonGenerator.forBlock['procedures_defreturn'] = procedureGenerator;
 
-      // 4. EVENT LISTENER
       workspace.current.addChangeListener((event) => {
-        if (
-          event.type === Blockly.Events.BLOCK_CREATE ||
-          event.type === Blockly.Events.BLOCK_DELETE ||
-          event.type === Blockly.Events.BLOCK_CHANGE ||
-          event.type === Blockly.Events.BLOCK_MOVE
-        ) {
+        if (event.type === Blockly.Events.BLOCK_CREATE || event.type === Blockly.Events.BLOCK_DELETE || event.type === Blockly.Events.BLOCK_CHANGE || event.type === Blockly.Events.BLOCK_MOVE) {
           const json = Blockly.serialization.workspaces.save(workspace.current);
           const code = pythonGenerator.workspaceToCode(workspace.current);
-          
-          if (onChangeRef.current) {
-            onChangeRef.current(json, code);
-          }
+          if (onChangeRef.current) onChangeRef.current(json, code);
         }
       });
       
-      // 5. RESIZE OBSERVER
       const observer = new ResizeObserver(() => {
-        if (workspace.current) {
-          Blockly.svgResize(workspace.current);
-        }
+        if (workspace.current) Blockly.svgResize(workspace.current);
       });
       observer.observe(blocklyDiv.current);
       blocklyDiv.current.resizeObserver = observer;
     }
 
-    // --- CLEANUP FUNCTION ---
     return () => {
       if (workspace.current) {
         workspace.current.dispose(); 

@@ -193,10 +193,11 @@ td {
   overflow: hidden; /* Prevents scrollbars from appearing wrongly */
 }
 
+/* HEADER BUTTONS & LAYOUT */
 .header-left-group {
   display: flex;
   gap: 10px;
-  align-items:center;
+  align-items: center;
 }
 
 .save-button {
@@ -212,5 +213,5 @@ td {
 }
 
 .save-button:hover {
-  background-color: #2980b9;
+  background-color: #2980b9; 
 }
