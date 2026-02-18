@@ -192,3 +192,25 @@ td {
   height: 100%;
   overflow: hidden; /* Prevents scrollbars from appearing wrongly */
 }
+
+.header-left-group {
+  display: flex;
+  gap: 10px;
+  align-items:center;
+}
+
+.save-button {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+.save-button:hover {
+  background-color: #2980b9;
+}

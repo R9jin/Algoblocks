@@ -32,6 +32,40 @@ const customBlocks = [
     "colour": "#999999", // Grey color for comments
     "tooltip": "Adds a comment to the Python code (ignored by the computer)",
     "helpUrl": ""
+  },
+
+  // MATH ASSIGNMENT (+=, -=, *=, /=)
+  {
+    "type": "math_increment",
+    "message0": "%1 %2 %3",
+    "args0": [
+      {
+        "type": "field_variable",
+        "name": "VAR",
+        "variable": "item"
+      },
+      {
+        "type": "field_dropdown",
+        "name": "OP",
+        "options": [
+          ["+=", "ADD"],
+          ["-=", "MINUS"],
+          ["*=", "MULTIPLY"],
+          ["/=", "DIVIDE"]
+        ]
+      },
+      {
+        "type": "input_value",
+        "name": "DELTA",
+        "check": "Number"
+      },
+    ],
+    "inputsInline" : true,
+    "previousStatement" : null,
+    "nextStatement" : null,
+    "colour" : 230,
+    "tooltip" : "Modify a variable (Add, Subtract, Multiply, Divide).",
+    "helpUrl" : ""
   }
 ];
 
@@ -92,6 +126,7 @@ const toolbox = {
             B: { shadow: { type: "math_number", fields: { NUM: 1 } } }
           }
         },
+        { kind: "block", type: "math_assignment"},
         { kind: "block", type: "math_single" },
         { kind: "block", type: "math_trig" },
         { kind: "block", type: "math_constant" },
@@ -266,6 +301,20 @@ export default function BlocklyWorkspace({ onChange }) {
         }
         return `${list}[0] = ${value}\n`;
       };
+
+      // Generator for math assignment
+      pythonGenerator.forBlock['math_assignment'] = function(block) {
+        const variable = pythonGenerator.getVariableName(block.getFieldValue('VAR'));
+        const operator = block.getFieldValue('OP');
+        const value = pythonGenerator.valueToCode(block, 'DELTA', pythonGenerator.ORDER_ADDITIVE) || '0';
+        
+        let symbol = "+=";
+        if (operator === "MINUS") symbol = "-=";
+        else if (operator === "MULTIPLY") symbol = "*=";
+        else if (operator === "DIVIDE") symbol = "/=";
+
+        return `${variable} ${symbol} ${value}\n`;
+      }
 
       // --- [FIX] 4. LOCAL VARIABLES IN FUNCTIONS (Critical for Recursion) ---
       // This stops Blockly from writing "global n, mid, i" inside functions.

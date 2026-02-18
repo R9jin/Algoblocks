@@ -10,12 +10,44 @@ export default function App() {
   const [generatedPython, setGeneratedPython] = useState("# Drag blocks to generate Python code");
   const [consoleOutput, setConsoleOutput] = useState("Ready to run...");
 
+  // NEW STATE: Shote the JSON configuration
+  const [blocklyJson, setBlocklyJson] = useState(null);
+
   const handleBlocklyChange = (json, pythonCode) => {
     setGeneratedPython(pythonCode);
+
+    // Capture the JSON
+    setBlocklyJson(json);
+
     const ast = buildAST(json);
     const report = analyzeLineByLine(ast);
     setAnalysisResult(report);
   };
+
+  // NEW FUNCTION: Download the JSON file
+  const saveConfiguration = () => {
+    if (!blocklyJson) {
+      alert("No blocks to save!"); 
+      return;
+    }
+
+    // Convert JSON object to a string
+    const jsonString = JSON. stringify(blocklyJson, null, 2);
+
+    // Create a "Blob" (File-like object)
+    const blob = new Blob([jsonString, { type: "application/json" }]);
+
+    // Create a fake download link and click it
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "my-algorithm.json"; // file name
+    link.click();
+    
+    // Cleanup
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
 
   const runCode = () => {
     setConsoleOutput("> Running...");
@@ -49,7 +81,12 @@ export default function App() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <h1>AlgoBlocks</h1>
+        <div className="header-left-group">
+          <h1>AlgoBlocks</h1>
+          <button className="save-button" onClick={saveConfiguration}>
+              SAVE BLOCKS
+          </button>
+        </div>
         <div className="complexity-badge">
           Total Complexity: <strong>{analysisResult.total}</strong>
         </div>

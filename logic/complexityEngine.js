@@ -104,6 +104,21 @@ export function analyzeLineByLine(ast) {
         return `print(${content})`;
     }
 
+    // math_assignment
+    if (node.type === "math_assignment") {
+      const varName = node.fields?.VAR?.name || "item";
+      const opCode = node.fields?.OP || "ADD";
+
+      // convert code (ADD) back to symbol (+=)
+      let symbol = "+=";
+        if (opCode === "MINUS") symbol = "-=";
+        if (opCode === "MULTIPLY") symbol = "*=";
+        if (opCode === "DIVIDE") symbol = "/=";
+
+        const val = node.children[0] ? reconstructCode(node.children[0]) : "0";
+        return `${varName} ${symbol} ${val}`;
+     }
+
     const map = {
       "controls_if": "if condition:",
       "controls_whileUntil": "while condition:",
@@ -121,7 +136,8 @@ export function analyzeLineByLine(ast) {
       "variables_set", "controls_if", "controls_for", 
       "controls_forEach", "controls_whileUntil", "controls_repeat_ext",
       "text_print", "lists_setIndex", "math_change",
-      "procedures_defnoreturn", "procedures_defreturn", "procedures_callnoreturn"
+      "procedures_defnoreturn", "procedures_defreturn", "procedures_callnoreturn",
+      "math_assignment"
     ];
 
     let lineComplexity = "O(1)";
