@@ -1,4 +1,6 @@
 /* src/index.css */
+/* ... (keep existing top section) ... */
+
 :root {
   font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -33,6 +35,30 @@ body {
   flex-shrink: 0;
 }
 
+/* --- ADD THESE NEW STYLES --- */
+.header-left-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.save-button {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+.save-button:hover {
+  background-color: #2980b9; 
+}
+/* ---------------------------- */
+
 .complexity-badge {
   background-color: #f1c40f;
   color: #2c3e50;
@@ -41,42 +67,32 @@ body {
   font-weight: bold;
 }
 
-/* --- MAIN LAYOUT GRID --- */
+/* ... (keep the rest of your split pane styles below) ... */
 .main-content {
   display: flex;
-  flex: 1; /* Fills remaining height */
+  flex: 1;
   overflow: hidden;
 }
 
-/* --- DELETE the 'flex' lines marked below --- */
-
-/* LEFT COLUMN */
 .left-column {
-  /* flex: 2;  <-- DELETE THIS */
   display: flex;
   flex-direction: column;
   border-right: 4px solid #ddd;
 }
 
-/* RIGHT COLUMN */
 .right-column {
-  /* flex: 1;  <-- DELETE THIS */
   display: flex;
   flex-direction: column;
   background-color: #fff;
 }
 
-/* 1. Workspace (Top Left) */
 .workspace-area {
-  /* flex: 2;  <-- DELETE THIS */
   position: relative;
   min-height: 0; 
-  overflow: hidden; /* Keep this to prevent scrollbar bugs */
+  overflow: hidden; 
 }
 
-/* 2. Generated Code (Bottom Left) */
 .code-area {
-  /* flex: 1;  <-- DELETE THIS */
   background-color: #282c34;
   color: #abb2bf;
   border-top: 4px solid #ddd;
@@ -85,23 +101,18 @@ body {
   overflow: hidden;
 }
 
-/* 3. Complexity (Top Right) */
 .complexity-area {
-  /* flex: 1;  <-- DELETE THIS */
   overflow-y: auto;
   border-bottom: 4px solid #ddd;
 }
 
-/* 4. Console (Bottom Right) */
 .console-area {
-  /* flex: 1;  <-- DELETE THIS */
   background-color: #1e1e1e;
   color: #0f0;
   display: flex;
   flex-direction: column;
 }
 
-/* --- COMMON ELEMENTS --- */
 .panel-header {
   background: #e0e0e0;
   color: #333;
@@ -114,7 +125,6 @@ body {
   align-items: center;
 }
 
-/* Code & Console Content */
 pre {
   margin: 0;
   padding: 10px;
@@ -124,7 +134,6 @@ pre {
   flex: 1;
 }
 
-/* Run Button */
 .run-button {
   background-color: #27ae60;
   color: white;
@@ -140,7 +149,6 @@ pre {
   background-color: #2ecc71;
 }
 
-/* Table Styles */
 table {
   width: 100%;
   border-collapse: collapse;
@@ -162,56 +170,30 @@ td {
   font-family: monospace;
 }
 
-/* --- SPLIT PANE GUTTERS --- */
 .gutter {
-  background-color: #2c3e50; /* Dark grey handle */
+  background-color: #2c3e50; 
   background-repeat: no-repeat;
   background-position: 50%;
 }
 
 .gutter.gutter-horizontal {
   cursor: col-resize;
-  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg=='); /* Grip icon */
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
 }
 
 .gutter.gutter-vertical {
   cursor: row-resize;
-  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAFAQMAAABo7865AAAABlBMVEVHcEzMzMzyAv2sAAAAAXRSTlMAQObYZgAAABBJREFUeF5jOAMEEAIEEFwAn3kMwcB6I2AAAAAASUVORK5CYII='); /* Grip icon */
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAFAQMAAABo7865AAAABlBMVEVHcEzMzMzyAv2sAAAAAXRSTlMAQObYZgAAABBJREFUeF5jOAMEEAIEEFwAn3kMwcB6I2AAAAAASUVORK5CYII='); 
 }
 
-/* Ensure split containers fill the space */
 .split {
   display: flex;
   flex-direction: row;
 }
 
-/* Fix for Left/Right Columns being splits now */
 .left-column, .right-column {
-  display: flex; /* Required for nested vertical splits */
+  display: flex; 
   flex-direction: column; 
   height: 100%;
-  overflow: hidden; /* Prevents scrollbars from appearing wrongly */
-}
-
-/* HEADER BUTTONS & LAYOUT */
-.header-left-group {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.save-button {
-  background-color: #3498db;
-  color: white;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: bold;
-  transition: background-color 0.2s;
-}
-
-.save-button:hover {
-  background-color: #2980b9; 
+  overflow: hidden; 
 }

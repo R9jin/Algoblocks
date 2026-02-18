@@ -1,5 +1,5 @@
 // src/App.jsx
-import { useState } from "react";
+import { useRef, useState } from "react"; // <--- IMPORT useRef
 import Split from "react-split";
 import BlocklyWorkspace from "./components/BlocklyWorkspace.jsx";
 import { buildAST } from "./logic/astBuilder";
@@ -10,6 +10,8 @@ export default function App() {
   const [generatedPython, setGeneratedPython] = useState("# Drag blocks to generate Python code");
   const [consoleOutput, setConsoleOutput] = useState("Ready to run...");
   const [blocklyJson, setBlocklyJson] = useState(null);
+
+  const workspaceRef = useRef(null); // <--- CREATE REF
 
   const handleBlocklyChange = (json, pythonCode) => {
     setGeneratedPython(pythonCode);
@@ -34,6 +36,15 @@ export default function App() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+
+  // <--- ADDED CLEAR FUNCTION
+  const clearAll = () => {
+    if (window.confirm("⚠️ Are you sure you want to delete all blocks? This cannot be undone.")) {
+      if (workspaceRef.current) {
+        workspaceRef.current.clear();
+      }
+    }
   };
 
   const runCode = () => {
@@ -73,6 +84,14 @@ export default function App() {
             <button className="save-button" onClick={saveConfiguration}>
                 💾 SAVE BLOCKS
             </button>
+            {/* <--- ADDED CLEAR BUTTON */}
+            <button 
+              className="save-button" 
+              onClick={clearAll} 
+              style={{ backgroundColor: "#e74c3c", marginLeft: "10px" }}
+            >
+                🗑️ CLEAR
+            </button>
         </div>
         <div className="complexity-badge">
           Total Complexity: <strong>{analysisResult.total}</strong>
@@ -93,7 +112,8 @@ export default function App() {
           minSize={100}
         >
           <div className="workspace-area">
-            <BlocklyWorkspace onChange={handleBlocklyChange} />
+            {/* <--- PASS REF TO WORKSPACE */}
+            <BlocklyWorkspace ref={workspaceRef} onChange={handleBlocklyChange} />
           </div>
           
           <div className="code-area">
