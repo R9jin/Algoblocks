@@ -3,7 +3,7 @@ import "blockly/blocks";
 import * as Blockly from "blockly/core";
 import * as En from "blockly/msg/en";
 import { pythonGenerator } from "blockly/python";
-import { useEffect, useRef } from "react"; // <--- CHANGED
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react"; // <--- IMPORT forwardRef & useImperativeHandle
 
 // --- PLUGIN IMPORTS ---
 import { CrossTabCopyPaste } from "@blockly/plugin-cross-tab-copy-paste";
@@ -164,10 +164,20 @@ const toolbox = {
   ],
 };
 
-export default function BlocklyWorkspace({ onChange }) {
+// --- WRAP COMPONENT IN forwardRef ---
+const BlocklyWorkspace = forwardRef(({ onChange }, ref) => {
   const blocklyDiv = useRef(null);
   const workspace = useRef(null);
   const onChangeRef = useRef(onChange);
+
+  // --- EXPOSE CLEAR FUNCTION ---
+  useImperativeHandle(ref, () => ({
+    clear: () => {
+      if (workspace.current) {
+        workspace.current.clear();
+      }
+    }
+  }));
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -345,4 +355,6 @@ export default function BlocklyWorkspace({ onChange }) {
       <div ref={blocklyDiv} style={{ height: "100%", width: "100%" }} />
     </div>
   );
-}
+}); // <--- END FORWARD REF
+
+export default BlocklyWorkspace;
