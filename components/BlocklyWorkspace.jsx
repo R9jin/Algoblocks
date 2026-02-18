@@ -16,7 +16,7 @@ Blockly.setLocale(En);
 
 // --- 1. DEFINE CUSTOM BLOCKS ---
 const customBlocks = [
-  // Existing Comment Block
+  // Comment Block
   {
     "type": "comment_block",
     "message0": "Comment %1",
@@ -29,7 +29,7 @@ const customBlocks = [
     "tooltip": "Adds a comment to the Python code",
     "helpUrl": ""
   },
-  // ---NEW: MATH ASSIGNMENT (+=, -=, *=, /=) ---
+  // --- NEW: MATH ASSIGNMENT (+=, -=, *=, /=) ---
   {
     "type": "math_assignment",
     "message0": "%1 %2 %3",
@@ -166,7 +166,7 @@ const toolbox = {
 };
 
 export default function BlocklyWorkspace({ onChange }) {
-  const blocklyDiv = useRef(null);
+  const blocklyDiv = useRef(null); // FIXED TYPO
   const workspace = useRef(null);
   const onChangeRef = useRef(onChange);
 
@@ -194,8 +194,8 @@ export default function BlocklyWorkspace({ onChange }) {
         const crossTab = new CrossTabCopyPaste();
         crossTab.init({ contextMenu: true, shortcut: true }, () => {});
       }
-      constRPMinimap = new PositionedMinimap(workspace.current);
-      constRPMinimap.init();
+      const minimap = new PositionedMinimap(workspace.current); // FIXED TYPO
+      minimap.init();
       const modal = new Modal(workspace.current);
       modal.init();
 
@@ -220,23 +220,22 @@ export default function BlocklyWorkspace({ onChange }) {
         return `${variable} ${symbol} ${value}\n`;
       };
 
+      // --- UPDATED LOOP GENERATOR (With range(n) Fix) ---
       pythonGenerator.forBlock['controls_for'] = function(block) {
         const variable = pythonGenerator.getVariableName(block.getFieldValue('VAR'));
         const from = pythonGenerator.valueToCode(block, 'FROM', pythonGenerator.ORDER_NONE) || '0';
         const to = pythonGenerator.valueToCode(block, 'TO', pythonGenerator.ORDER_ADDITIVE) || '0';
         const step = pythonGenerator.valueToCode(block, 'BY', pythonGenerator.ORDER_NONE) || '1';
-        
+
         let rangeCode;
-        
-        // logic for not generating clean range
-        if (step == '1') {
-          if (from == '0') {
-            rangeCode = `range(${to})`; // clean: range(n)
-          } else {
-            rangeCode = `range(${from}, ${to})`; //  normal: range (1, n)
-          }
+        if (step === '1') {
+            if (from === '0') {
+                rangeCode = `range(${to})`; // Cleaner: range(n)
+            } else {
+                rangeCode = `range(${from}, ${to})`; // Normal: range(start, end)
+            }
         } else {
-          rangeCode = `range(${from}, ${to}, ${step})`; // complex: range (0, n, 2)
+            rangeCode = `range(${from}, ${to}, ${step})`;
         }
 
         let branch = pythonGenerator.statementToCode(block, 'DO') || pythonGenerator.PASS;
@@ -268,6 +267,34 @@ export default function BlocklyWorkspace({ onChange }) {
         return `${list}[0] = ${value}\n`;
       };
 
+      // src/components/BlocklyWorkspace.jsx
+
+      // --- [FIX] REMOVE "x = None" GLOBAL VARIABLES ---
+      pythonGenerator.finish = function(code) {
+        // 1. Get all the definitions (imports, functions)
+        const definitions = Object.values(pythonGenerator.definitions_);
+        
+        // 2. Separate Imports from Functions (optional cleanup)
+        const imports = [];
+        const funcs = [];
+
+        definitions.forEach(def => {
+            if (def.includes('import')) {
+                imports.push(def);
+            } else {
+                funcs.push(def);
+            }
+        });
+
+        // 3. CLEAN UP: Clear the dictionary for the next run
+        pythonGenerator.definitions_ = Object.create(null);
+        pythonGenerator.functionNames_ = Object.create(null);
+
+        // 4. RETURN: Imports + Functions + Code (NO VARIABLES)
+        const allDefs = imports.join('\n') + '\n\n' + funcs.join('\n\n');
+        return allDefs.replace(/\n\n+/g, '\n\n').trim() + '\n\n' + code;
+      };
+
       const procedureGenerator = function(block) {
         const funcName = pythonGenerator.getProcedureName(block.getFieldValue('NAME'));
         let branch = pythonGenerator.statementToCode(block, 'STACK');
@@ -290,7 +317,7 @@ export default function BlocklyWorkspace({ onChange }) {
 
       workspace.current.addChangeListener((event) => {
         if (event.type === Blockly.Events.BLOCK_CREATE || event.type === Blockly.Events.BLOCK_DELETE || event.type === Blockly.Events.BLOCK_CHANGE || event.type === Blockly.Events.BLOCK_MOVE) {
-          const json = Blockly.serialization.workspaces.save(workspace.current);
+          const json = Blockly.serialization.workspaces.save(workspace.current); // FIXED TYPO
           const code = pythonGenerator.workspaceToCode(workspace.current);
           if (onChangeRef.current) onChangeRef.current(json, code);
         }
